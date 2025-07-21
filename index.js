@@ -619,7 +619,7 @@ app.post("/generate", (req, res) => {
   }).toStream((err, stream) => {
     if (err) return res.status(500).send("PDF error");
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'attachment; filename="'billto' + _invoice.pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="'billto' + _invoice.pdf"');
     stream.pipe(res);
   });
 });
