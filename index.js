@@ -518,10 +518,11 @@ app.post("/generate", (req, res) => {
     <body>
     <div style="font-family: Arial, sans-serif; padding: 8mm; max-width: 190mm; margin: auto; border: 2px solid #000; font-size: 10px; box-sizing: border-box;">
       <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <div style="font-weight: bold; font-size: 12px;">BILL OF SUPPLY</div>
-        <div style="border: 1px solid #000; padding: 2px 6px; font-size: 9px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
+      <div style="margin-bottom: 8px; position: relative; height: 20px;">
+         <div style="font-weight: bold; font-size: 12px; display: inline-block;">BILL OF SUPPLY</div>
+         <div style="position: absolute; right: 0; top: 0; border: 1px solid #000; padding: 2px 6px; font-size: 9px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
       </div>
+
       
       <div style="border: 1px solid #000; margin-bottom: 8px;">
         <!-- Business Info -->
