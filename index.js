@@ -107,13 +107,14 @@ app.get("/", (req, res) => {
         /* Desktop layout */
         @media (min-width: 769px) {
           .item {
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.2fr auto;
-            align-items: center;
+            grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 1fr 1.2fr 1fr;
+            align-items: end;
+            padding: 8px;
           }
           
           .item-header { 
             display: grid; 
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.2fr auto;
+            grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 1fr 1.2fr 1fr;
             gap: 8px; 
             margin-bottom: 8px; 
             font-weight: bold; 
@@ -129,6 +130,10 @@ app.get("/", (req, res) => {
           
           .mobile-label {
             display: none;
+          }
+          
+          .item input, .item select {
+            margin: 0;
           }
         }
         
@@ -219,14 +224,24 @@ app.get("/", (req, res) => {
         <h2 style="text-align: center; color: #333;">Invoice Generator</h2>
         <form id="form">
           <div class="form-section">
-            <input name="billto" placeholder="BILL TO" required />
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Bill To:</label>
+            <input name="billto" placeholder="Enter customer name and address" required />
           </div>
           
           <div class="form-section">
             <div class="three-col">
-              <input name="invoice" placeholder="Invoice No." required />
-              <input name="date" type="date" value="${todayIST}" required />
-              <input name="duedate" type="date" value="${todayIST}" placeholder="Due Date" />
+              <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Invoice No.:</label>
+                <input name="invoice" placeholder="Enter invoice number" required />
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Invoice Date:</label>
+                <input name="date" type="date" value="${todayIST}" required />
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Due Date:</label>
+                <input name="duedate" type="date" value="${todayIST}" />
+              </div>
             </div>
           </div>
 
@@ -248,7 +263,8 @@ app.get("/", (req, res) => {
           <div class="form-section">
             <div class="total-display">Total: ₹<span id="total">0</span></div>
             <div class="received-section">
-              <input name="received" type="number" step="0.01" placeholder="Received Amount (default: 0)" />
+              <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Received Amount:</label>
+              <input name="received" type="number" step="0.01" placeholder="Enter received amount (default: 0)" />
             </div>
           </div>
           
@@ -386,10 +402,27 @@ app.get("/", (req, res) => {
           })
             .then(res => res.blob())
             .then(blob => {
+              const url = window.URL.createObjectURL(blob);
               const a = document.createElement("a");
-              a.href = window.URL.createObjectURL(blob);
+              a.style.display = "none";
+              a.href = url;
               a.download = "invoice_" + data.invoice + ".pdf";
-              a.click();
+              
+              // For iOS compatibility
+              if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, "invoice_" + data.invoice + ".pdf");
+              } else {
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              }
+              
+              // Clean up the URL object
+              setTimeout(() => window.URL.revokeObjectURL(url), 100);
+            })
+            .catch(error => {
+              console.error('Download error:', error);
+              alert('Error downloading PDF. Please try again.');
             });
         });
 
@@ -444,7 +477,17 @@ app.post("/generate", (req, res) => {
   const dueDateFormatted = new Date(duedate).toLocaleDateString('en-GB');
 
   const html = `
-    <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 190mm; margin: auto; border: 2px solid #000; font-size: 10px;">
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; }
+      </style>
+    </head>
+    <body>
+    <div style="font-family: Arial, sans-serif; padding: 8mm; max-width: 190mm; margin: auto; border: 2px solid #000; font-size: 10px; box-sizing: border-box;">
       <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div style="font-weight: bold; font-size: 12px;">BILL OF SUPPLY</div>
@@ -532,22 +575,25 @@ app.post("/generate", (req, res) => {
         <div style="font-size: 9px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
       </div>
     </div>
+    </body>
+    </html>
   `;
 
   pdf.create(html, {
     format: 'A4',
     orientation: 'portrait',
     border: {
-      top: '0.3in',
-      right: '0.3in',
-      bottom: '0.3in',
-      left: '0.3in'
+      top: '5mm',
+      right: '5mm',
+      bottom: '5mm',
+      left: '5mm'
     },
-    height: '11.7in',
-    width: '8.3in'
+    type: 'pdf',
+    quality: '75'
   }).toStream((err, stream) => {
     if (err) return res.status(500).send("PDF error");
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="invoice_' + invoice + '.pdf"');
     stream.pipe(res);
   });
 });
