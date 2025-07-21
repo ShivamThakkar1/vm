@@ -422,11 +422,11 @@ app.get("/", (req, res) => {
               const a = document.createElement("a");
               a.style.display = "none";
               a.href = url;
-              a.download = "invoice_" + data.invoice + ".pdf";
+              a.download = "invoice_" + data.billto + ".pdf";
               
               // For iOS compatibility
               if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, "invoice_" + data.invoice + ".pdf");
+                window.navigator.msSaveOrOpenBlob(blob, "invoice_" + data.billto + ".pdf");
               } else {
                 document.body.appendChild(a);
                 a.click();
