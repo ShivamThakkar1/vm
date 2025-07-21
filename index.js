@@ -299,6 +299,21 @@ app.get("/", (req, res) => {
       </div>
 
       <script>
+        // Prevent accidental page reload
+        let formModified = false;
+        
+        window.addEventListener('beforeunload', function (e) {
+          if (formModified) {
+            e.preventDefault();
+            e.returnValue = 'Are you sure you want to leave? Your unsaved changes will be lost.';
+            return e.returnValue;
+          }
+        });
+
+        function markFormModified() {
+          formModified = true;
+        }
+
         function addItem() {
           const item = document.createElement("div");
           item.className = "item";
@@ -311,16 +326,16 @@ app.get("/", (req, res) => {
             
             <div class="mobile-label">Unit</div>
             <select name="unit">
-              <option value="PCS">PCS</option>
-              <option value="KG">KG</option>
-              <option value="GM">GM</option>
-              <option value="ML">ML</option>
-              <option value="LTR">LTR</option>
-              <option value="PAC">PAC</option>
-              <option value="BDL">BDL</option>
-              <option value="BOX">BOX</option>
-              <option value="BTL">BTL</option>
-              <option value="MTR">MTR</option>
+              <option value="BDL">BDL - Bundle</option>
+              <option value="BOX">BOX - Box</option>
+              <option value="BTL">BTL - Bottle</option>
+              <option value="DOZ">DOZ - Dozen</option>
+              <option value="GM">GM - Gram</option>
+              <option value="KG">KG - Kilogram</option>
+              <option value="LTR">LTR - Litre</option>
+              <option value="ML">ML - Millilitre</option>
+              <option value="PCS">PCS - Pieces</option>
+              <option value="PKT">PKT - Packet</option>
             </select>
             
             <div class="mobile-label">Rate</div>
@@ -335,13 +350,18 @@ app.get("/", (req, res) => {
             <button type="button" class="remove-btn" onclick="removeItem(this)">Remove Item</button>
           \`;
           document.getElementById("items").appendChild(item);
-          item.querySelectorAll("input, select").forEach(input => input.addEventListener("input", update));
+          item.querySelectorAll("input, select").forEach(input => {
+            input.addEventListener("input", update);
+            input.addEventListener("input", markFormModified);
+          });
           update();
+          markFormModified();
         }
 
         function removeItem(btn) {
           btn.parentElement.remove();
           update();
+          markFormModified();
         }
 
         function calculateDiscount(amount, discount) {
@@ -384,6 +404,11 @@ app.get("/", (req, res) => {
           });
           document.getElementById("total").textContent = total.toFixed(2);
         }
+
+        // Add event listeners to existing form fields
+        document.querySelectorAll('input, select').forEach(input => {
+          input.addEventListener('input', markFormModified);
+        });
 
         document.getElementById("form").addEventListener("submit", e => {
           e.preventDefault();
@@ -445,6 +470,9 @@ app.get("/", (req, res) => {
               
               // Clean up the URL object
               setTimeout(() => window.URL.revokeObjectURL(url), 100);
+              
+              // Reset form modification flag after successful download
+              formModified = false;
             })
             .catch(error => {
               console.error('Download error:', error);
@@ -483,28 +511,28 @@ app.post("/generate", (req, res) => {
   const rows = items.map(
     (item, i) =>
       `<tr>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${i + 1}</td>
-        <td style="border: 1px solid #000; padding: 6px; font-size: 10px;">${item.name}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.qty} ${item.unit}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">₹${item.rate}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.discount || '0'}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: right; font-size: 10px;">₹${item.amount}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px;">${i + 1}</td>
+        <td style="border: 1px solid #000; padding: 8px; font-size: 12px;">${item.name}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px;">${item.qty} ${item.unit}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px;">₹${item.rate}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px;">${item.discount || '0'}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 12px;">₹${item.amount}</td>
       </tr>`
   ).join("");
 
   // Reduce minimum rows to fit on single page
-  const minRows = Math.max(18, items.length);
+  const minRows = Math.max(20, items.length);
   const emptyRowsCount = minRows - items.length;
   
-  // FIXED: Proper empty rows with exact same column structure and consistent styling
+  // FIXED: Proper empty rows with exact same column structure and consistent styling - thin black borders
   const emptyRows = Array(emptyRowsCount).fill().map(() => 
-    `<tr style="height: 18px;">
-      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 8%;"></td>
-      <td style="border: 1px solid #000; padding: 6px; font-size: 10px; width: 35%;"></td>
-      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 15%;"></td>
-      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 12%;"></td>
-      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 15%;"></td>
-      <td style="border: 1px solid #000; padding: 6px; text-align: right; font-size: 10px; width: 15%;"></td>
+    `<tr style="height: 20px;">
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px; width: 8%;"></td>
+      <td style="border: 1px solid #000; padding: 8px; font-size: 12px; width: 35%;"></td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px; width: 15%;"></td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px; width: 12%;"></td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12px; width: 15%;"></td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 12px; width: 15%;"></td>
     </tr>`
   ).join('');
 
@@ -514,55 +542,55 @@ app.post("/generate", (req, res) => {
   const invoiceDate = new Date(date).toLocaleDateString('en-GB');
   const dueDateFormatted = new Date(duedate).toLocaleDateString('en-GB');
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Arial, sans-serif; margin: 0; padding: 0; } table { border-collapse: collapse; }</style></head><body style="margin:0;padding:0;">
-    <div style="font-family: Arial, sans-serif; padding: 8mm; max-width: 190mm; margin: 0 auto; border: 2px solid #000; font-size: 10px; box-sizing: border-box;">
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Arial, sans-serif; margin: 0; padding: 20px 0; } table { border-collapse: collapse; }</style></head><body style="margin:0;padding:20px 0;">
+    <div style="font-family: Arial, sans-serif; padding: 15mm; max-width: 200mm; width: 100%; margin: 0 auto; border: 1px solid #000; font-size: 12px; box-sizing: border-box; min-height: 250mm;">
       <!-- Header -->
-      <div style="margin-bottom: 8px; position: relative; height: 20px;">
-         <div style="font-weight: bold; font-size: 12px; display: inline-block;">BILL OF SUPPLY</div>
-         <div style="position: absolute; right: 0; top: 0; border: 1px solid #000; padding: 2px 6px; font-size: 9px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
+      <div style="margin-bottom: 12px; position: relative; height: 25px;">
+         <div style="font-weight: bold; font-size: 16px; display: inline-block;">BILL OF SUPPLY</div>
+         <div style="position: absolute; right: 0; top: 0; border: 1px solid #000; padding: 4px 8px; font-size: 11px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
       </div>
 
       
-      <div style="border: 1px solid #000; margin-bottom: 8px;">
+      <div style="border: 1px solid #000; margin-bottom: 12px;">
         <!-- Business Info -->
-        <div style="text-align: center; padding: 10px; border-bottom: 1px solid #000;">
-          <div style="font-weight: bold; font-size: 14px; margin-bottom: 3px;">${BILL_NAME}</div>
-          <div style="font-size: 10px; margin-bottom: 2px;">${BILL_ADDRESS}</div>
-          <div style="font-size: 10px;">Mobile: ${BILL_PHONE}</div>
+        <div style="text-align: center; padding: 15px; border-bottom: 1px solid #000;">
+          <div style="font-weight: bold; font-size: 18px; margin-bottom: 5px;">${BILL_NAME}</div>
+          <div style="font-size: 12px; margin-bottom: 3px;">${BILL_ADDRESS}</div>
+          <div style="font-size: 12px;">Mobile: ${BILL_PHONE}</div>
         </div>
         
         <!-- Bill To and Invoice Details -->
         <div style="display: flex;">
-          <div style="flex: 1; padding: 8px; border-right: 1px solid #000;">
-            <div style="font-weight: bold; font-size: 10px; margin-bottom: 4px;">BILL TO</div>
-            <div style="font-size: 10px;">${billto}</div>
+          <div style="flex: 1; padding: 12px; border-right: 1px solid #000;">
+            <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">BILL TO</div>
+            <div style="font-size: 12px; line-height: 1.4;">${billto}</div>
           </div>
-          <div style="flex: 1; padding: 8px;">
-            <table style="width: 100%; font-size: 10px;">
+          <div style="flex: 1; padding: 12px;">
+            <table style="width: 100%; font-size: 12px;">
               <tr>
-                <td style="font-weight: bold; padding: 1px 0;">Invoice No.</td>
-                <td style="font-weight: bold; padding: 1px 0;">Invoice Date</td>
-                <td style="font-weight: bold; padding: 1px 0;">Due Date</td>
+                <td style="font-weight: bold; padding: 2px 0; width: 33%;">Invoice No.</td>
+                <td style="font-weight: bold; padding: 2px 0; width: 33%;">Invoice Date</td>
+                <td style="font-weight: bold; padding: 2px 0; width: 33%;">Due Date</td>
               </tr>
               <tr>
-                <td style="padding: 1px 0;">${invoice}</td>
-                <td style="padding: 1px 0;">${invoiceDate}</td>
-                <td style="padding: 1px 0;">${dueDateFormatted}</td>
+                <td style="padding: 2px 0;">${invoice}</td>
+                <td style="padding: 2px 0;">${invoiceDate}</td>
+                <td style="padding: 2px 0;">${dueDateFormatted}</td>
               </tr>
             </table>
           </div>
         </div>
         
         <!-- Items Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
           <thead>
             <tr style="background-color: #f0f0f0;">
-              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 8%;">S.NO</th>
-              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 35%;">ITEMS</th>
-              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 15%;">QTY.</th>
-              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 12%;">RATE</th>
-              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 15%;">DISCOUNT</th>
-              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 15%;">AMOUNT</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 8%;">S.NO</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 35%;">ITEMS</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">QTY.</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 12%;">RATE</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">DISCOUNT</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">AMOUNT</th>
             </tr>
           </thead>
           <tbody>
@@ -572,33 +600,33 @@ app.post("/generate", (req, res) => {
         </table>
         
         <!-- Total Section -->
-        <div style="border-top: 2px solid #000;">
-          <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
+        <div>
+          <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
             <tr>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 58%; background: #f0f0f0;">TOTAL</td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 27%;"></td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; width: 15%;">₹ ${total}</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 58%; background: #f0f0f0;">TOTAL</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 27%;"></td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; width: 15%;">₹ ${total}</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; background: #f0f0f0;">RECEIVED AMOUNT</td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;"></td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold;">₹ ${received}</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background: #f0f0f0;">RECEIVED AMOUNT</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;"></td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">₹ ${received}</td>
             </tr>
           </table>
         </div>
       </div>
       
       <!-- Amount in Words -->
-      <div style="border: 1px solid #000; margin-bottom: 8px; padding: 6px;">
-        <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">Total Amount (in words)</div>
-        <div style="font-size: 10px;">${totalInWords}</div>
+      <div style="border: 1px solid #000; margin-bottom: 12px; padding: 10px;">
+        <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Total Amount (in words)</div>
+        <div style="font-size: 12px; line-height: 1.3;">${totalInWords}</div>
       </div>
       
       <!-- Terms and Conditions -->
-      <div style="border: 1px solid #000; padding: 6px;">
-        <div style="font-weight: bold; font-size: 10px; margin-bottom: 3px;">Terms and Conditions</div>
-        <div style="font-size: 9px;">1. Goods once sold will not be taken back or exchanged</div>
-        <div style="font-size: 9px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
+      <div style="border: 1px solid #000; padding: 10px;">
+        <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">Terms and Conditions</div>
+        <div style="font-size: 11px; margin-bottom: 2px;">1. Goods once sold will not be taken back or exchanged</div>
+        <div style="font-size: 11px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
       </div>
     </div>
     </body>
@@ -609,16 +637,16 @@ app.post("/generate", (req, res) => {
     format: 'A4',
     orientation: 'portrait',
     border: {
-      top: '0',  // Changed from 5mm to 0
-      right: '5mm',
-      bottom: '5mm',
-      left: '5mm'
+      top: '10mm',
+      right: '10mm',
+      bottom: '10mm',
+      left: '10mm'
     },
     header: {
-      height: '0mm'  // Add this to ensure no header space
+      height: '0mm'
     },
     footer: {
-      height: '5mm'
+      height: '0mm'
     },
     type: 'pdf',
     quality: '75'
