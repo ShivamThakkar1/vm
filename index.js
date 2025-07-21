@@ -15,26 +15,60 @@ const {
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Get today's date in IST
+function getTodayIST() {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+  const istTime = new Date(now.getTime() + istOffset);
+  return istTime.toISOString().split('T')[0];
+}
+
 app.get("/", (req, res) => {
+  const todayIST = getTodayIST();
+  
   res.send(`
     <html>
     <head>
       <title>Invoice Generator</title>
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f8f8f8; }
-        input, button { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; }
-        .item { display: flex; gap: 5px; margin-bottom: 5px; }
-        .item input { flex: 1; padding: 6px; }
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f8f8f8; }
+        input, button, select { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; }
+        .item { display: flex; gap: 5px; margin-bottom: 5px; align-items: center; }
+        .item input, .item select { flex: 1; padding: 6px; min-width: 0; }
+        .item .unit-col { flex: 0.8; }
+        .item .discount-col { flex: 0.8; }
+        .item .amount-col { flex: 1; }
         #items hr { margin: 5px 0; }
+        .form-row { display: flex; gap: 10px; }
+        .form-row input { flex: 1; }
+        .item-header { display: flex; gap: 5px; margin-bottom: 5px; font-weight: bold; font-size: 12px; }
+        .item-header div { flex: 1; text-align: center; padding: 5px; background: #ddd; }
+        .item-header .unit-col { flex: 0.8; }
+        .item-header .discount-col { flex: 0.8; }
+        .item-header .amount-col { flex: 1; }
+        .remove-btn { background: #ff4444; color: white; border: none; padding: 5px 8px; cursor: pointer; border-radius: 3px; flex: 0 0 auto; width: auto; }
       </style>
     </head>
     <body>
       <h2>Invoice Generator</h2>
       <form id="form">
         <input name="billto" placeholder="BILL TO" required />
-        <input name="invoice" placeholder="Invoice No." required />
-        <input name="date" type="date" required />
+        
+        <div class="form-row">
+          <input name="invoice" placeholder="Invoice No." required />
+          <input name="date" type="date" value="${todayIST}" required />
+        </div>
+
+        <div class="item-header">
+          <div>Item Name</div>
+          <div>Qty</div>
+          <div class="unit-col">Unit</div>
+          <div>Rate</div>
+          <div class="discount-col">Discount</div>
+          <div class="amount-col">Amount</div>
+          <div style="flex: 0 0 50px;">Action</div>
+        </div>
 
         <div id="items"></div>
         <button type="button" onclick="addItem()">+ Add Item</button>
@@ -48,26 +82,62 @@ app.get("/", (req, res) => {
           const item = document.createElement("div");
           item.className = "item";
           item.innerHTML = \`
-            <input name="name" placeholder="Item" required />
-            <input name="qty" type="number" placeholder="Qty" required />
-            <input name="rate" type="number" placeholder="Rate" required />
-            <input name="amount" type="text" placeholder="₹0" disabled />
+            <input name="name" placeholder="Item Name" required />
+            <input name="qty" type="number" step="0.01" placeholder="Qty" required />
+            <select name="unit" class="unit-col">
+              <option value="PCS">PCS</option>
+              <option value="KG">KG</option>
+              <option value="GM">GM</option>
+              <option value="ML">ML</option>
+              <option value="LTR">LTR</option>
+              <option value="PAC">PAC</option>
+              <option value="BDL">BDL</option>
+              <option value="BOX">BOX</option>
+              <option value="BTL">BTL</option>
+              <option value="MTR">MTR</option>
+            </select>
+            <input name="rate" type="number" step="0.01" placeholder="Rate" required />
+            <input name="discount" type="text" class="discount-col" placeholder="0 or 10%" />
+            <input name="amount" type="text" class="amount-col" placeholder="₹0" disabled />
+            <button type="button" class="remove-btn" onclick="removeItem(this)">×</button>
           \`;
           document.getElementById("items").appendChild(item);
-          item.querySelectorAll("input").forEach(input => input.addEventListener("input", update));
+          item.querySelectorAll("input, select").forEach(input => input.addEventListener("input", update));
           update();
+        }
+
+        function removeItem(btn) {
+          btn.parentElement.remove();
+          update();
+        }
+
+        function calculateDiscount(amount, discount) {
+          if (!discount || discount.trim() === '') return 0;
+          
+          discount = discount.trim();
+          if (discount.endsWith('%')) {
+            const percent = parseFloat(discount.slice(0, -1));
+            return (amount * percent) / 100;
+          } else {
+            return parseFloat(discount) || 0;
+          }
         }
 
         function update() {
           let total = 0;
           document.querySelectorAll(".item").forEach(item => {
             const qty = parseFloat(item.children[1].value) || 0;
-            const rate = parseFloat(item.children[2].value) || 0;
-            const amount = qty * rate;
-            item.children[3].value = "₹" + amount;
-            total += amount;
+            const rate = parseFloat(item.children[3].value) || 0;
+            const discount = item.children[4].value || '0';
+            
+            const grossAmount = qty * rate;
+            const discountAmount = calculateDiscount(grossAmount, discount);
+            const netAmount = grossAmount - discountAmount;
+            
+            item.children[5].value = "₹" + netAmount.toFixed(2);
+            total += netAmount;
           });
-          document.getElementById("total").textContent = total;
+          document.getElementById("total").textContent = total.toFixed(2);
         }
 
         document.getElementById("form").addEventListener("submit", e => {
@@ -83,12 +153,18 @@ app.get("/", (req, res) => {
           document.querySelectorAll(".item").forEach(item => {
             const name = item.children[0].value;
             const qty = item.children[1].value;
-            const rate = item.children[2].value;
-            const amount = qty * rate;
-            data.items.push({ name, qty, rate, amount });
+            const unit = item.children[2].value;
+            const rate = item.children[3].value;
+            const discount = item.children[4].value || '0';
+            
+            const grossAmount = qty * rate;
+            const discountAmount = calculateDiscount(grossAmount, discount);
+            const amount = grossAmount - discountAmount;
+            
+            data.items.push({ name, qty, unit, rate, discount, amount: amount.toFixed(2) });
           });
 
-          data.total = data.items.reduce((sum, i) => sum + i.amount, 0);
+          data.total = data.items.reduce((sum, i) => sum + parseFloat(i.amount), 0).toFixed(2);
 
           fetch("/generate", {
             method: "POST",
@@ -99,11 +175,12 @@ app.get("/", (req, res) => {
             .then(blob => {
               const a = document.createElement("a");
               a.href = window.URL.createObjectURL(blob);
-              a.download = "invoice_" + data.billto.replace(/\s+/g, "_") + ".pdf";
+              a.download = "invoice_" + data.invoice + ".pdf";
               a.click();
             });
         });
 
+        // Add first item by default
         addItem();
       </script>
     </body>
@@ -133,42 +210,94 @@ app.post("/generate", (req, res) => {
 
   const rows = items.map(
     (item, i) =>
-      `<tr><td>${i + 1}</td><td>${item.name}</td><td>${item.qty}</td><td>${item.rate}</td><td>${item.amount}</td></tr>`
+      `<tr>
+        <td style="text-align: center;">${i + 1}</td>
+        <td>${item.name}</td>
+        <td style="text-align: center;">${item.qty} ${item.unit}</td>
+        <td style="text-align: center;">${item.rate}</td>
+        <td style="text-align: right;">₹${item.amount}</td>
+      </tr>`
   ).join("");
 
-  const totalInWords = numberToWords(total).trim() + " Rupees";
+  const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees";
+
+  // Format date
+  const invoiceDate = new Date(date).toLocaleDateString('en-GB');
 
   const html = `
-    <div style="font-family: sans-serif; padding: 20px;">
-      <h2 style="text-align:center;">BILL OF SUPPLY</h2>
-      <h3>${BILL_NAME}</h3>
-      <p>${BILL_ADDRESS}</p>
-      <p>Mobile: ${BILL_PHONE}</p>
-      <hr/>
-      <p><strong>BILL TO:</strong> ${billto}</p>
-      <p><strong>Invoice No:</strong> ${invoice}</p>
-      <p><strong>Invoice Date:</strong> ${date}</p>
+    <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto;">
+      <h2 style="text-align: center; margin: 0; font-size: 18px; font-weight: bold;">BILL OF SUPPLY</h2>
+      <div style="text-align: right; font-size: 12px; margin-top: 5px;">ORIGINAL FOR RECIPIENT</div>
+      
+      <div style="margin: 20px 0;">
+        <h3 style="margin: 0; font-size: 16px;">${BILL_NAME}</h3>
+        <p style="margin: 2px 0; font-size: 12px;">${BILL_ADDRESS}</p>
+        <p style="margin: 2px 0; font-size: 12px;">Mobile: ${BILL_PHONE}</p>
+      </div>
 
-      <table border="1" cellspacing="0" cellpadding="8" width="100%">
-        <tr><th>S.No</th><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
-        ${rows}
+      <div style="margin: 20px 0;">
+        <p style="margin: 5px 0; font-size: 12px;"><strong>BILL TO</strong></p>
+        <p style="margin: 5px 0; font-size: 12px;">${billto}</p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+        <div>
+          <p style="margin: 2px 0; font-size: 12px;"><strong>Invoice No.</strong></p>
+          <p style="margin: 2px 0; font-size: 12px;">${invoice}</p>
+        </div>
+        <div>
+          <p style="margin: 2px 0; font-size: 12px;"><strong>Invoice Date</strong></p>
+          <p style="margin: 2px 0; font-size: 12px;">${invoiceDate}</p>
+        </div>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px;">
+        <thead>
+          <tr style="background-color: #f0f0f0;">
+            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">S.NO.</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">ITEMS</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">QTY.</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">RATE</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
       </table>
 
-      <h3>Total: ₹${total}</h3>
-      <p><strong>Total Amount (in words):</strong> ${totalInWords}</p>
+      <div style="text-align: right; margin: 20px 0;">
+        <p style="margin: 5px 0; font-size: 14px;"><strong>TOTAL - ₹ ${total}</strong></p>
+        <p style="margin: 5px 0; font-size: 12px;"><strong>RECEIVED AMOUNT ₹ 0</strong></p>
+      </div>
 
-      <br/>
-      <h4>Terms and Conditions</h4>
-      <p>1. Goods once sold will not be taken back or exchanged</p>
-      <p>2. All disputes are subject to ${BILL_CITY} jurisdiction only</p>
+      <div style="margin: 20px 0;">
+        <p style="margin: 5px 0; font-size: 12px;"><strong>Total Amount (in words)</strong></p>
+        <p style="margin: 5px 0; font-size: 12px;">${totalInWords}</p>
+      </div>
+
+      <div style="margin: 30px 0;">
+        <h4 style="margin: 10px 0; font-size: 14px;">Terms and Conditions</h4>
+        <p style="margin: 5px 0; font-size: 12px;">1. Goods once sold will not be taken back or exchanged</p>
+        <p style="margin: 5px 0; font-size: 12px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</p>
+      </div>
     </div>
   `;
 
-  pdf.create(html).toStream((err, stream) => {
+  pdf.create(html, {
+    format: 'A4',
+    orientation: 'portrait',
+    border: {
+      top: '0.5in',
+      right: '0.5in',
+      bottom: '0.5in',
+      left: '0.5in'
+    }
+  }).toStream((err, stream) => {
     if (err) return res.status(500).send("PDF error");
     res.setHeader("Content-Type", "application/pdf");
     stream.pipe(res);
   });
 });
 
-app.listen(PORT, () => console.log("✅ Invoice app running on port", PORT));
+app.listen(PORT, () => console.log("✅ Enhanced Invoice app running on port", PORT));
