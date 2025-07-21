@@ -123,6 +123,17 @@ app.get("/", (req, res) => {
           }
         }
 
+        function formatDiscountForPDF(discount) {
+          if (!discount || discount.trim() === '' || discount === '0') return '0';
+          
+          discount = discount.trim();
+          if (discount.endsWith('%')) {
+            return discount; // Already has %
+          } else {
+            return '₹' + discount; // Add ₹ for amount discount
+          }
+        }
+
         function update() {
           let total = 0;
           document.querySelectorAll(".item").forEach(item => {
@@ -161,7 +172,14 @@ app.get("/", (req, res) => {
             const discountAmount = calculateDiscount(grossAmount, discount);
             const amount = grossAmount - discountAmount;
             
-            data.items.push({ name, qty, unit, rate, discount, amount: amount.toFixed(2) });
+            data.items.push({ 
+              name, 
+              qty, 
+              unit, 
+              rate, 
+              discount: formatDiscountForPDF(discount), 
+              amount: amount.toFixed(2) 
+            });
           });
 
           data.total = data.items.reduce((sum, i) => sum + parseFloat(i.amount), 0).toFixed(2);
@@ -215,6 +233,7 @@ app.post("/generate", (req, res) => {
         <td>${item.name}</td>
         <td style="text-align: center;">${item.qty} ${item.unit}</td>
         <td style="text-align: center;">${item.rate}</td>
+        <td style="text-align: center;">${item.discount || '0'}</td>
         <td style="text-align: right;">₹${item.amount}</td>
       </tr>`
   ).join("");
@@ -258,6 +277,7 @@ app.post("/generate", (req, res) => {
             <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">ITEMS</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">QTY.</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">RATE</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">DISCOUNT</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">AMOUNT</th>
           </tr>
         </thead>
@@ -267,8 +287,7 @@ app.post("/generate", (req, res) => {
       </table>
 
       <div style="text-align: right; margin: 20px 0;">
-        <p style="margin: 5px 0; font-size: 14px;"><strong>TOTAL - ₹ ${total}</strong></p>
-        <p style="margin: 5px 0; font-size: 12px;"><strong>RECEIVED AMOUNT ₹ 0</strong></p>
+        <p style="margin: 5px 0; font-size: 14px;"><strong>TOTAL = ₹ ${total}</strong></p>
       </div>
 
       <div style="margin: 20px 0;">
