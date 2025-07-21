@@ -74,6 +74,24 @@ app.get("/", (req, res) => {
           border-radius: 4px;
         }
         
+        /* FIXED: Remove button styling - more specific selector */
+        .item .remove-btn { 
+          background: #ff4444 !important; 
+          color: white !important; 
+          border: none !important; 
+          padding: 10px 15px !important; 
+          cursor: pointer !important; 
+          border-radius: 4px !important; 
+          font-size: 14px !important;
+          width: auto !important;
+          margin: 8px 0 !important;
+          align-self: center;
+        }
+        
+        .item .remove-btn:hover {
+          background: #cc0000 !important;
+        }
+        
         /* Mobile layout - stacked */
         @media (max-width: 768px) {
           .item {
@@ -81,26 +99,33 @@ app.get("/", (req, res) => {
           }
           
           .item-header {
-            display: none; /* Hide headers on mobile, use labels instead */
+            display: grid !important; /* FIXED: Show headers on mobile with better styling */
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #333 !important;
+            color: white !important;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
           }
           
-          .item input, .item select {
-            position: relative;
+          .item-header div {
+            display: none; /* Hide individual header cells on mobile */
           }
           
-          /* Add labels for mobile */
-          .item input[name="name"]::before { content: "Item Name: "; }
-          .item input[name="qty"]::before { content: "Qty: "; }
-          .item select[name="unit"]::before { content: "Unit: "; }
-          .item input[name="rate"]::before { content: "Rate: "; }
-          .item input[name="discount"]::before { content: "Discount: "; }
-          .item input[name="amount"]::before { content: "Amount: "; }
+          .item-header::before {
+            content: "Item Details";
+          }
           
           .mobile-label {
             font-size: 12px;
             color: #666;
             margin-bottom: 4px;
             font-weight: bold;
+            display: block !important;
           }
         }
         
@@ -119,13 +144,17 @@ app.get("/", (req, res) => {
             margin-bottom: 8px; 
             font-weight: bold; 
             font-size: 14px; 
+            background: #333;
+            padding: 12px 8px;
+            border-radius: 8px;
           }
           
           .item-header div { 
             text-align: center; 
             padding: 8px; 
-            background: #ddd; 
+            background: transparent;
             border-radius: 4px;
+            color: white;
           }
           
           .mobile-label {
@@ -135,19 +164,6 @@ app.get("/", (req, res) => {
           .item input, .item select {
             margin: 0;
           }
-        }
-        
-        .remove-btn { 
-          background: #ff4444; 
-          color: white; 
-          border: none; 
-          padding: 10px 15px; 
-          cursor: pointer; 
-          border-radius: 4px; 
-          font-size: 14px;
-          width: auto;
-          margin: 8px 0;
-          align-self: center;
         }
         
         .form-section { 
@@ -201,7 +217,7 @@ app.get("/", (req, res) => {
           font-size: 16px;
         }
         
-        button[type="button"] {
+        button[type="button"]:not(.remove-btn) {
           background: #28a745;
           color: white;
           font-weight: bold;
@@ -460,15 +476,27 @@ app.post("/generate", (req, res) => {
         <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${i + 1}</td>
         <td style="border: 1px solid #000; padding: 6px; font-size: 10px;">${item.name}</td>
         <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.qty} ${item.unit}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.rate}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">₹${item.rate}</td>
         <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.discount || '0'}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: right; font-size: 10px;">${item.amount}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: right; font-size: 10px;">₹${item.amount}</td>
       </tr>`
   ).join("");
 
   // Reduce minimum rows to fit on single page
-  const minRows = Math.max(8, items.length);
+  const minRows = Math.max(12, items.length);
   const emptyRowsCount = minRows - items.length;
+  
+  // FIXED: Proper empty rows with exact same column structure
+  const emptyRows = Array(emptyRowsCount).fill().map(() => 
+    `<tr>
+      <td style="border: 1px solid #000; padding: 6px; height: 18px; font-size: 10px;"></td>
+      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
+      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
+      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
+      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
+      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
+    </tr>`
+  ).join('');
 
   const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees";
 
@@ -484,6 +512,7 @@ app.post("/generate", (req, res) => {
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; }
       </style>
     </head>
     <body>
@@ -538,20 +567,17 @@ app.post("/generate", (req, res) => {
           </thead>
           <tbody>
             ${rows}
-            <!-- Empty rows to maintain table height -->
-            ${Array(emptyRowsCount).fill().map(() => 
-              '<tr><td style="border: 1px solid #000; padding: 6px; height: 18px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>'
-            ).join('')}
+            ${emptyRows}
           </tbody>
         </table>
         
         <!-- Total Section -->
         <div style="border-top: 2px solid #000;">
-          <table style="width: 100%; font-size: 10px;">
+          <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
             <tr>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 73%; background: #f0f0f0;">TOTAL</td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 2%;">-</td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; width: 25%;">₹ ${total}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 58%; background: #f0f0f0;">TOTAL</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 27%;"></td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; width: 15%;">₹ ${total}</td>
             </tr>
             <tr>
               <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; background: #f0f0f0;">RECEIVED AMOUNT</td>
@@ -593,7 +619,7 @@ app.post("/generate", (req, res) => {
   }).toStream((err, stream) => {
     if (err) return res.status(500).send("PDF error");
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'attachment; filename="invoice_' + invoice + '.pdf"');
+    res.setHeader("Content-Disposition", 'attachment; filename="'billto' + _invoice.pdf");
     stream.pipe(res);
   });
 });
