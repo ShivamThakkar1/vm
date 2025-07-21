@@ -493,7 +493,7 @@ app.post("/generate", (req, res) => {
   ).join("");
 
   // Reduce minimum rows to fit on single page
-  const minRows = Math.max(20, items.length);
+  const minRows = Math.max(18, items.length);
   const emptyRowsCount = minRows - items.length;
   
   // FIXED: Proper empty rows with exact same column structure and consistent styling
