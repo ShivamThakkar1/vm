@@ -229,12 +229,12 @@ app.post("/generate", (req, res) => {
   const rows = items.map(
     (item, i) =>
       `<tr>
-        <td style="text-align: center;">${i + 1}</td>
-        <td>${item.name}</td>
-        <td style="text-align: center;">${item.qty} ${item.unit}</td>
-        <td style="text-align: center;">${item.rate}</td>
-        <td style="text-align: center;">${item.discount || '0'}</td>
-        <td style="text-align: right;">₹${item.amount}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${i + 1}</td>
+        <td style="border: 1px solid #000; padding: 8px;">${item.name}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.qty} ${item.unit}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.rate}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.discount || '0'}</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: right;">${item.amount}</td>
       </tr>`
   ).join("");
 
@@ -244,61 +244,92 @@ app.post("/generate", (req, res) => {
   const invoiceDate = new Date(date).toLocaleDateString('en-GB');
 
   const html = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto;">
-      <h2 style="text-align: center; margin: 0; font-size: 18px; font-weight: bold;">BILL OF SUPPLY</h2>
-      <div style="text-align: right; font-size: 12px; margin-top: 5px;">ORIGINAL FOR RECIPIENT</div>
+    <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 210mm; margin: auto; border: 2px solid #000;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="font-weight: bold; font-size: 14px;">BILL OF SUPPLY</div>
+        <div style="border: 1px solid #000; padding: 3px 8px; font-size: 10px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
+      </div>
       
-      <div style="margin: 20px 0;">
-        <h3 style="margin: 0; font-size: 16px;">${BILL_NAME}</h3>
-        <p style="margin: 2px 0; font-size: 12px;">${BILL_ADDRESS}</p>
-        <p style="margin: 2px 0; font-size: 12px;">Mobile: ${BILL_PHONE}</p>
-      </div>
-
-      <div style="margin: 20px 0;">
-        <p style="margin: 5px 0; font-size: 12px;"><strong>BILL TO</strong></p>
-        <p style="margin: 5px 0; font-size: 12px;">${billto}</p>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; margin: 20px 0;">
-        <div>
-          <p style="margin: 2px 0; font-size: 12px;"><strong>Invoice No.</strong></p>
-          <p style="margin: 2px 0; font-size: 12px;">${invoice}</p>
+      <div style="border: 1px solid #000; margin-bottom: 10px;">
+        <!-- Business Info -->
+        <div style="text-align: center; padding: 15px; border-bottom: 1px solid #000;">
+          <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">${BILL_NAME}</div>
+          <div style="font-size: 11px; margin-bottom: 2px;">${BILL_ADDRESS}</div>
+          <div style="font-size: 11px;">Mobile: ${BILL_PHONE}</div>
         </div>
-        <div>
-          <p style="margin: 2px 0; font-size: 12px;"><strong>Invoice Date</strong></p>
-          <p style="margin: 2px 0; font-size: 12px;">${invoiceDate}</p>
+        
+        <!-- Bill To and Invoice Details -->
+        <div style="display: flex;">
+          <div style="flex: 1; padding: 10px; border-right: 1px solid #000;">
+            <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px;">BILL TO</div>
+            <div style="font-size: 11px;">${billto}</div>
+          </div>
+          <div style="flex: 1; padding: 10px;">
+            <table style="width: 100%; font-size: 11px;">
+              <tr>
+                <td style="font-weight: bold; padding: 2px 0;">Invoice No.</td>
+                <td style="font-weight: bold; padding: 2px 0;">Invoice Date</td>
+                <td style="font-weight: bold; padding: 2px 0;">Due Date</td>
+              </tr>
+              <tr>
+                <td style="padding: 2px 0;">${invoice}</td>
+                <td style="padding: 2px 0;">${invoiceDate}</td>
+                <td style="padding: 2px 0;">${invoiceDate}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Items Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 8%;">S.NO</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 35%;">ITEMS</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">QTY.</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 12%;">RATE</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">DISCOUNT</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">AMOUNT</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            <!-- Empty rows to maintain table height -->
+            ${Array(Math.max(0, 15 - items.length)).fill().map(() => 
+              '<tr><td style="border: 1px solid #000; padding: 8px; height: 25px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td></tr>'
+            ).join('')}
+          </tbody>
+        </table>
+        
+        <!-- Total Section -->
+        <div style="border-top: 2px solid #000;">
+          <table style="width: 100%; font-size: 11px;">
+            <tr>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 73%; background: #f0f0f0;">TOTAL</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 2%;">-</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; width: 25%;">₹ ${total}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background: #f0f0f0;">RECEIVED AMOUNT</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;"></td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">₹ 0</td>
+            </tr>
+          </table>
         </div>
       </div>
-
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px;">
-        <thead>
-          <tr style="background-color: #f0f0f0;">
-            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">S.NO.</th>
-            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">ITEMS</th>
-            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">QTY.</th>
-            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">RATE</th>
-            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">DISCOUNT</th>
-            <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">AMOUNT</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-
-      <div style="text-align: right; margin: 20px 0;">
-        <p style="margin: 5px 0; font-size: 14px;"><strong>TOTAL = ₹ ${total}</strong></p>
+      
+      <!-- Amount in Words -->
+      <div style="border: 1px solid #000; margin-bottom: 10px; padding: 8px;">
+        <div style="font-weight: bold; font-size: 11px; margin-bottom: 3px;">Total Amount (in words)</div>
+        <div style="font-size: 11px;">${totalInWords}</div>
       </div>
-
-      <div style="margin: 20px 0;">
-        <p style="margin: 5px 0; font-size: 12px;"><strong>Total Amount (in words)</strong></p>
-        <p style="margin: 5px 0; font-size: 12px;">${totalInWords}</p>
-      </div>
-
-      <div style="margin: 30px 0;">
-        <h4 style="margin: 10px 0; font-size: 14px;">Terms and Conditions</h4>
-        <p style="margin: 5px 0; font-size: 12px;">1. Goods once sold will not be taken back or exchanged</p>
-        <p style="margin: 5px 0; font-size: 12px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</p>
+      
+      <!-- Terms and Conditions -->
+      <div style="border: 1px solid #000; padding: 8px;">
+        <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px;">Terms and Conditions</div>
+        <div style="font-size: 10px;">1. Goods once sold will not be taken back or exchanged</div>
+        <div style="font-size: 10px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
       </div>
     </div>
   `;
