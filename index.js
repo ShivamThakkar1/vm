@@ -32,103 +32,242 @@ app.get("/", (req, res) => {
       <title>Invoice Generator</title>
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f8f8f8; }
-        input, button, select { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; box-sizing: border-box; }
-        .item { 
-          display: grid; 
-          grid-template-columns: 2fr 1fr 0.8fr 1fr 0.8fr 1.2fr auto; 
-          gap: 8px; 
-          margin-bottom: 8px; 
-          align-items: center; 
-        }
-        .item input, .item select { 
-          padding: 8px; 
+        * { box-sizing: border-box; }
+        body { 
+          font-family: sans-serif; 
+          padding: 15px; 
           margin: 0; 
+          background: #f8f8f8; 
           font-size: 14px;
-          min-width: 0;
         }
-        #items hr { margin: 5px 0; }
-        .form-row { display: flex; gap: 10px; }
-        .form-row input { flex: 1; }
-        .item-header { 
-          display: grid; 
-          grid-template-columns: 2fr 1fr 0.8fr 1fr 0.8fr 1.2fr auto; 
-          gap: 8px; 
-          margin-bottom: 8px; 
-          font-weight: bold; 
-          font-size: 14px; 
+        
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
         }
-        .item-header div { 
-          text-align: center; 
-          padding: 8px; 
-          background: #ddd; 
+        
+        input, button, select { 
+          width: 100%; 
+          padding: 12px; 
+          margin: 8px 0; 
+          font-size: 16px; 
+          border: 1px solid #ddd;
           border-radius: 4px;
         }
+        
+        /* Mobile-first responsive item grid */
+        .item { 
+          display: grid;
+          gap: 8px; 
+          margin-bottom: 12px; 
+          padding: 12px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .item input, .item select { 
+          padding: 10px; 
+          margin: 4px 0; 
+          font-size: 14px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        
+        /* Mobile layout - stacked */
+        @media (max-width: 768px) {
+          .item {
+            grid-template-columns: 1fr;
+          }
+          
+          .item-header {
+            display: none; /* Hide headers on mobile, use labels instead */
+          }
+          
+          .item input, .item select {
+            position: relative;
+          }
+          
+          /* Add labels for mobile */
+          .item input[name="name"]::before { content: "Item Name: "; }
+          .item input[name="qty"]::before { content: "Qty: "; }
+          .item select[name="unit"]::before { content: "Unit: "; }
+          .item input[name="rate"]::before { content: "Rate: "; }
+          .item input[name="discount"]::before { content: "Discount: "; }
+          .item input[name="amount"]::before { content: "Amount: "; }
+          
+          .mobile-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: bold;
+          }
+        }
+        
+        /* Desktop layout */
+        @media (min-width: 769px) {
+          .item {
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.2fr auto;
+            align-items: center;
+          }
+          
+          .item-header { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.2fr auto;
+            gap: 8px; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            font-size: 14px; 
+          }
+          
+          .item-header div { 
+            text-align: center; 
+            padding: 8px; 
+            background: #ddd; 
+            border-radius: 4px;
+          }
+          
+          .mobile-label {
+            display: none;
+          }
+        }
+        
         .remove-btn { 
           background: #ff4444; 
           color: white; 
           border: none; 
-          padding: 8px 12px; 
+          padding: 10px 15px; 
           cursor: pointer; 
           border-radius: 4px; 
-          font-size: 16px;
+          font-size: 14px;
           width: auto;
-          margin: 0;
+          margin: 8px 0;
+          align-self: center;
         }
-        .form-section { margin-bottom: 20px; }
-        .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .received-section { margin-top: 10px; }
+        
+        .form-section { 
+          margin-bottom: 20px; 
+          background: white;
+          padding: 15px;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-row { 
+          display: flex; 
+          gap: 10px; 
+          flex-wrap: wrap;
+        }
+        
+        .form-row input { 
+          flex: 1; 
+          min-width: 200px;
+        }
+        
+        @media (max-width: 768px) {
+          .form-row {
+            flex-direction: column;
+          }
+          
+          .form-row input {
+            min-width: auto;
+          }
+          
+          body {
+            padding: 10px;
+          }
+        }
+        
+        .three-col { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+          gap: 10px; 
+        }
+        
+        .received-section { 
+          margin-top: 15px; 
+        }
+        
+        button[type="submit"] {
+          background: #007bff;
+          color: white;
+          font-weight: bold;
+          padding: 15px;
+          font-size: 16px;
+        }
+        
+        button[type="button"] {
+          background: #28a745;
+          color: white;
+          font-weight: bold;
+        }
+        
+        .total-display {
+          font-size: 18px;
+          font-weight: bold;
+          color: #007bff;
+          text-align: center;
+          padding: 15px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          margin: 10px 0;
+        }
       </style>
     </head>
     <body>
-      <h2>Invoice Generator</h2>
-      <form id="form">
-        <div class="form-section">
-          <input name="billto" placeholder="BILL TO" required />
-        </div>
-        
-        <div class="form-section">
-          <div class="three-col">
-            <input name="invoice" placeholder="Invoice No." required />
-            <input name="date" type="date" value="${todayIST}" required />
-            <input name="duedate" type="date" value="${todayIST}" placeholder="Due Date" />
+      <div class="container">
+        <h2 style="text-align: center; color: #333;">Invoice Generator</h2>
+        <form id="form">
+          <div class="form-section">
+            <input name="billto" placeholder="BILL TO" required />
           </div>
-        </div>
-
-        <div class="form-section">
-          <div class="item-header">
-            <div>Item Name</div>
-            <div>Qty</div>
-            <div>Unit</div>
-            <div>Rate</div>
-            <div>Discount</div>
-            <div>Amount</div>
-            <div>Action</div>
+          
+          <div class="form-section">
+            <div class="three-col">
+              <input name="invoice" placeholder="Invoice No." required />
+              <input name="date" type="date" value="${todayIST}" required />
+              <input name="duedate" type="date" value="${todayIST}" placeholder="Due Date" />
+            </div>
           </div>
 
-          <div id="items"></div>
-          <button type="button" onclick="addItem()">+ Add Item</button>
-        </div>
-        
-        <hr/>
-        
-        <div class="form-section">
-          <h3>Total: ₹<span id="total">0</span></h3>
-          <div class="received-section">
-            <input name="received" type="number" step="0.01" placeholder="Received Amount (default: 0)" />
+          <div class="form-section">
+            <div class="item-header">
+              <div>Item Name</div>
+              <div>Qty</div>
+              <div>Unit</div>
+              <div>Rate</div>
+              <div>Discount</div>
+              <div>Amount</div>
+              <div>Action</div>
+            </div>
+
+            <div id="items"></div>
+            <button type="button" onclick="addItem()">+ Add Item</button>
           </div>
-        </div>
-        
-        <button type="submit">Download PDF</button>
-      </form>
+          
+          <div class="form-section">
+            <div class="total-display">Total: ₹<span id="total">0</span></div>
+            <div class="received-section">
+              <input name="received" type="number" step="0.01" placeholder="Received Amount (default: 0)" />
+            </div>
+          </div>
+          
+          <button type="submit">Download PDF</button>
+        </form>
+      </div>
 
       <script>
         function addItem() {
           const item = document.createElement("div");
           item.className = "item";
           item.innerHTML = \`
+            <div class="mobile-label">Item Name</div>
             <input name="name" placeholder="Item Name" required />
+            
+            <div class="mobile-label">Quantity</div>
             <input name="qty" type="number" step="0.01" placeholder="Qty" required />
+            
+            <div class="mobile-label">Unit</div>
             <select name="unit">
               <option value="PCS">PCS</option>
               <option value="KG">KG</option>
@@ -141,10 +280,17 @@ app.get("/", (req, res) => {
               <option value="BTL">BTL</option>
               <option value="MTR">MTR</option>
             </select>
+            
+            <div class="mobile-label">Rate</div>
             <input name="rate" type="number" step="0.01" placeholder="Rate" required />
+            
+            <div class="mobile-label">Discount</div>
             <input name="discount" type="text" placeholder="0 or 10%" />
+            
+            <div class="mobile-label">Amount</div>
             <input name="amount" type="text" placeholder="₹0" disabled />
-            <button type="button" class="remove-btn" onclick="removeItem(this)">×</button>
+            
+            <button type="button" class="remove-btn" onclick="removeItem(this)">Remove Item</button>
           \`;
           document.getElementById("items").appendChild(item);
           item.querySelectorAll("input, select").forEach(input => input.addEventListener("input", update));
@@ -173,24 +319,25 @@ app.get("/", (req, res) => {
           
           discount = discount.trim();
           if (discount.endsWith('%')) {
-            return discount; // Already has %
+            return discount;
           } else {
-            return '₹' + discount; // Add ₹ for amount discount
+            return '₹' + discount;
           }
         }
 
         function update() {
           let total = 0;
           document.querySelectorAll(".item").forEach(item => {
-            const qty = parseFloat(item.children[1].value) || 0;
-            const rate = parseFloat(item.children[3].value) || 0;
-            const discount = item.children[4].value || '0';
+            const inputs = item.querySelectorAll("input, select");
+            const qty = parseFloat(inputs[1].value) || 0;
+            const rate = parseFloat(inputs[3].value) || 0;
+            const discount = inputs[4].value || '0';
             
             const grossAmount = qty * rate;
             const discountAmount = calculateDiscount(grossAmount, discount);
             const netAmount = grossAmount - discountAmount;
             
-            item.children[5].value = "₹" + netAmount.toFixed(2);
+            inputs[5].value = "₹" + netAmount.toFixed(2);
             total += netAmount;
           });
           document.getElementById("total").textContent = total.toFixed(2);
@@ -203,17 +350,18 @@ app.get("/", (req, res) => {
             billto: form.get("billto"),
             invoice: form.get("invoice"),
             date: form.get("date"),
-            duedate: form.get("duedate") || form.get("date"), // Default to invoice date if empty
-            received: form.get("received") || "0", // Default to 0 if empty
+            duedate: form.get("duedate") || form.get("date"),
+            received: form.get("received") || "0",
             items: [],
           };
 
           document.querySelectorAll(".item").forEach(item => {
-            const name = item.children[0].value;
-            const qty = item.children[1].value;
-            const unit = item.children[2].value;
-            const rate = item.children[3].value;
-            const discount = item.children[4].value || '0';
+            const inputs = item.querySelectorAll("input, select");
+            const name = inputs[0].value;
+            const qty = inputs[1].value;
+            const unit = inputs[2].value;
+            const rate = inputs[3].value;
+            const discount = inputs[4].value || '0';
             
             const grossAmount = qty * rate;
             const discountAmount = calculateDiscount(grossAmount, discount);
@@ -276,17 +424,17 @@ app.post("/generate", (req, res) => {
   const rows = items.map(
     (item, i) =>
       `<tr>
-        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${i + 1}</td>
-        <td style="border: 1px solid #000; padding: 8px;">${item.name}</td>
-        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.qty} ${item.unit}</td>
-        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.rate}</td>
-        <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.discount || '0'}</td>
-        <td style="border: 1px solid #000; padding: 8px; text-align: right;">${item.amount}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${i + 1}</td>
+        <td style="border: 1px solid #000; padding: 6px; font-size: 10px;">${item.name}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.qty} ${item.unit}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.rate}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${item.discount || '0'}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: right; font-size: 10px;">${item.amount}</td>
       </tr>`
   ).join("");
 
-  // Calculate minimum rows needed (at least 15, but more if items exceed 15)
-  const minRows = Math.max(15, items.length);
+  // Reduce minimum rows to fit on single page
+  const minRows = Math.max(8, items.length);
   const emptyRowsCount = minRows - items.length;
 
   const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees";
@@ -296,92 +444,92 @@ app.post("/generate", (req, res) => {
   const dueDateFormatted = new Date(duedate).toLocaleDateString('en-GB');
 
   const html = `
-    <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 210mm; margin: auto; border: 2px solid #000;">
+    <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 190mm; margin: auto; border: 2px solid #000; font-size: 10px;">
       <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <div style="font-weight: bold; font-size: 14px;">BILL OF SUPPLY</div>
-        <div style="border: 1px solid #000; padding: 3px 8px; font-size: 10px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="font-weight: bold; font-size: 12px;">BILL OF SUPPLY</div>
+        <div style="border: 1px solid #000; padding: 2px 6px; font-size: 9px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</div>
       </div>
       
-      <div style="border: 1px solid #000; margin-bottom: 10px;">
+      <div style="border: 1px solid #000; margin-bottom: 8px;">
         <!-- Business Info -->
-        <div style="text-align: center; padding: 15px; border-bottom: 1px solid #000;">
-          <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">${BILL_NAME}</div>
-          <div style="font-size: 11px; margin-bottom: 2px;">${BILL_ADDRESS}</div>
-          <div style="font-size: 11px;">Mobile: ${BILL_PHONE}</div>
+        <div style="text-align: center; padding: 10px; border-bottom: 1px solid #000;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 3px;">${BILL_NAME}</div>
+          <div style="font-size: 10px; margin-bottom: 2px;">${BILL_ADDRESS}</div>
+          <div style="font-size: 10px;">Mobile: ${BILL_PHONE}</div>
         </div>
         
         <!-- Bill To and Invoice Details -->
         <div style="display: flex;">
-          <div style="flex: 1; padding: 10px; border-right: 1px solid #000;">
-            <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px;">BILL TO</div>
-            <div style="font-size: 11px;">${billto}</div>
+          <div style="flex: 1; padding: 8px; border-right: 1px solid #000;">
+            <div style="font-weight: bold; font-size: 10px; margin-bottom: 4px;">BILL TO</div>
+            <div style="font-size: 10px;">${billto}</div>
           </div>
-          <div style="flex: 1; padding: 10px;">
-            <table style="width: 100%; font-size: 11px;">
+          <div style="flex: 1; padding: 8px;">
+            <table style="width: 100%; font-size: 10px;">
               <tr>
-                <td style="font-weight: bold; padding: 2px 0;">Invoice No.</td>
-                <td style="font-weight: bold; padding: 2px 0;">Invoice Date</td>
-                <td style="font-weight: bold; padding: 2px 0;">Due Date</td>
+                <td style="font-weight: bold; padding: 1px 0;">Invoice No.</td>
+                <td style="font-weight: bold; padding: 1px 0;">Invoice Date</td>
+                <td style="font-weight: bold; padding: 1px 0;">Due Date</td>
               </tr>
               <tr>
-                <td style="padding: 2px 0;">${invoice}</td>
-                <td style="padding: 2px 0;">${invoiceDate}</td>
-                <td style="padding: 2px 0;">${dueDateFormatted}</td>
+                <td style="padding: 1px 0;">${invoice}</td>
+                <td style="padding: 1px 0;">${invoiceDate}</td>
+                <td style="padding: 1px 0;">${dueDateFormatted}</td>
               </tr>
             </table>
           </div>
         </div>
         
         <!-- Items Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
           <thead>
             <tr style="background-color: #f0f0f0;">
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 8%;">S.NO</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 35%;">ITEMS</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">QTY.</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 12%;">RATE</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">DISCOUNT</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 15%;">AMOUNT</th>
+              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 8%;">S.NO</th>
+              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 35%;">ITEMS</th>
+              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 15%;">QTY.</th>
+              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 12%;">RATE</th>
+              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 15%;">DISCOUNT</th>
+              <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 15%;">AMOUNT</th>
             </tr>
           </thead>
           <tbody>
             ${rows}
             <!-- Empty rows to maintain table height -->
             ${Array(emptyRowsCount).fill().map(() => 
-              '<tr><td style="border: 1px solid #000; padding: 8px; height: 25px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td><td style="border: 1px solid #000; padding: 8px;"></td></tr>'
+              '<tr><td style="border: 1px solid #000; padding: 6px; height: 18px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>'
             ).join('')}
           </tbody>
         </table>
         
         <!-- Total Section -->
         <div style="border-top: 2px solid #000;">
-          <table style="width: 100%; font-size: 11px;">
+          <table style="width: 100%; font-size: 10px;">
             <tr>
-              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 73%; background: #f0f0f0;">TOTAL</td>
-              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 2%;">-</td>
-              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; width: 25%;">₹ ${total}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 73%; background: #f0f0f0;">TOTAL</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 2%;">-</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; width: 25%;">₹ ${total}</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background: #f0f0f0;">RECEIVED AMOUNT</td>
-              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;"></td>
-              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">₹ ${received}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; background: #f0f0f0;">RECEIVED AMOUNT</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;"></td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold;">₹ ${received}</td>
             </tr>
           </table>
         </div>
       </div>
       
       <!-- Amount in Words -->
-      <div style="border: 1px solid #000; margin-bottom: 10px; padding: 8px;">
-        <div style="font-weight: bold; font-size: 11px; margin-bottom: 3px;">Total Amount (in words)</div>
-        <div style="font-size: 11px;">${totalInWords}</div>
+      <div style="border: 1px solid #000; margin-bottom: 8px; padding: 6px;">
+        <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">Total Amount (in words)</div>
+        <div style="font-size: 10px;">${totalInWords}</div>
       </div>
       
       <!-- Terms and Conditions -->
-      <div style="border: 1px solid #000; padding: 8px;">
-        <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px;">Terms and Conditions</div>
-        <div style="font-size: 10px;">1. Goods once sold will not be taken back or exchanged</div>
-        <div style="font-size: 10px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
+      <div style="border: 1px solid #000; padding: 6px;">
+        <div style="font-weight: bold; font-size: 10px; margin-bottom: 3px;">Terms and Conditions</div>
+        <div style="font-size: 9px;">1. Goods once sold will not be taken back or exchanged</div>
+        <div style="font-size: 9px;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
       </div>
     </div>
   `;
@@ -390,11 +538,13 @@ app.post("/generate", (req, res) => {
     format: 'A4',
     orientation: 'portrait',
     border: {
-      top: '0.5in',
-      right: '0.5in',
-      bottom: '0.5in',
-      left: '0.5in'
-    }
+      top: '0.3in',
+      right: '0.3in',
+      bottom: '0.3in',
+      left: '0.3in'
+    },
+    height: '11.7in',
+    width: '8.3in'
   }).toStream((err, stream) => {
     if (err) return res.status(500).send("PDF error");
     res.setHeader("Content-Type", "application/pdf");
