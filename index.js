@@ -85,7 +85,17 @@ app.get("/", (req, res) => {
           font-size: 14px !important;
           width: auto !important;
           margin: 8px 0 !important;
-          align-self: center;
+          align-self: end;
+          justify-self: center; /* Center the button in its grid cell */
+        }
+        
+        /* Add this new rule for desktop layout */
+        @media (min-width: 769px) {
+          .item .remove-btn {
+            grid-column: 7; /* Force the button to be in the 7th column */
+            margin-top: auto !important; /* Align with bottom of other elements */
+            margin-bottom: auto !important;
+          }
         }
         
         .item .remove-btn:hover {
@@ -486,15 +496,15 @@ app.post("/generate", (req, res) => {
   const minRows = Math.max(20, items.length);
   const emptyRowsCount = minRows - items.length;
   
-  // FIXED: Proper empty rows with exact same column structure
+  // FIXED: Proper empty rows with exact same column structure and consistent styling
   const emptyRows = Array(emptyRowsCount).fill().map(() => 
-    `<tr>
-      <td style="border: 1px solid #000; padding: 6px; height: 18px; font-size: 10px;"></td>
-      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
-      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
-      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
-      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
-      <td style="border: 1px solid #000; padding: 6px; font-size: 10px;"></td>
+    `<tr style="height: 18px;">
+      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 8%;"></td>
+      <td style="border: 1px solid #000; padding: 6px; font-size: 10px; width: 35%;"></td>
+      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 15%;"></td>
+      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 12%;"></td>
+      <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; width: 15%;"></td>
+      <td style="border: 1px solid #000; padding: 6px; text-align: right; font-size: 10px; width: 15%;"></td>
     </tr>`
   ).join('');
 
@@ -504,19 +514,8 @@ app.post("/generate", (req, res) => {
   const invoiceDate = new Date(date).toLocaleDateString('en-GB');
   const dueDateFormatted = new Date(duedate).toLocaleDateString('en-GB');
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; }
-        table { border-collapse: collapse; }
-      </style>
-    </head>
-    <body>
-    <div style="font-family: Arial, sans-serif; padding: 8mm; max-width: 190mm; margin: auto; border: 2px solid #000; font-size: 10px; box-sizing: border-box;">
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Arial, sans-serif; margin: 0; padding: 0; } table { border-collapse: collapse; }</style></head><body style="margin:0;padding:0;">
+    <div style="font-family: Arial, sans-serif; padding: 8mm; max-width: 190mm; margin: 0 auto; border: 2px solid #000; font-size: 10px; box-sizing: border-box;">
       <!-- Header -->
       <div style="margin-bottom: 8px; position: relative; height: 20px;">
          <div style="font-weight: bold; font-size: 12px; display: inline-block;">BILL OF SUPPLY</div>
@@ -610,10 +609,16 @@ app.post("/generate", (req, res) => {
     format: 'A4',
     orientation: 'portrait',
     border: {
-      top: '5mm',
+      top: '0',  // Changed from 5mm to 0
       right: '5mm',
       bottom: '5mm',
       left: '5mm'
+    },
+    header: {
+      height: '0mm'  // Add this to ensure no header space
+    },
+    footer: {
+      height: '5mm'
     },
     type: 'pdf',
     quality: '75'
