@@ -387,7 +387,7 @@ app.post("/generate", (req, res) => {
   `;
 
   pdf.create(html, {
-    format: 'A4',
+    format: 'A1',
     orientation: 'portrait',
     border: {
       top: '0.5in',
