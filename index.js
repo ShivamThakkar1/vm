@@ -28,7 +28,6 @@ const connectMongoDB = async () => {
         useUnifiedTopology: true,
         serverSelectionTimeoutMS: isRenderEnvironment ? 10000 : 5000, // Longer timeout for Render
         socketTimeoutMS: 45000,
-        bufferMaxEntries: 0,
         maxPoolSize: 10,
         // Render-specific optimizations
         retryWrites: true,
