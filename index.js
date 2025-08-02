@@ -874,29 +874,29 @@ app.post("/generate", async (req, res) => {
       }
     }
 
-    // Generate PDF with FIXED LAYOUT
+    // Generate PDF with ULTRA COMPACT LAYOUT
     const rows = items.map(
       (item, i) =>
         `<tr>
-          <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 9px; width: 6%;">${i + 1}</td>
-          <td style="border: 1px solid #000; padding: 4px; font-size: 9px; text-align: left; width: 50%;">${item.name}</td>
-          <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 9px; width: 15%;">${item.qty} ${item.unit}</td>
-          <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 9px; width: 14%;">₹${item.rate}</td>
-          <td style="border: 1px solid #000; padding: 4px; text-align: right; font-size: 9px; width: 15%;">₹${item.amount}</td>
+          <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 8px; height: 15px;">${i + 1}</td>
+          <td style="border: 1px solid #000; padding: 2px; font-size: 8px; text-align: left;">${item.name}</td>
+          <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 8px;">${item.qty} ${item.unit}</td>
+          <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 8px;">₹${item.rate}</td>
+          <td style="border: 1px solid #000; padding: 2px; text-align: right; font-size: 8px;">₹${item.amount}</td>
         </tr>`
     ).join("");
 
-    // Create empty rows to fill the table - OPTIMIZED for single page
-    const minRows = Math.max(6, items.length);
+    // Create minimal empty rows - ULTRA COMPACT
+    const minRows = Math.max(4, items.length);
     const emptyRowsCount = minRows - items.length;
     
     const emptyRows = Array(emptyRowsCount).fill().map(() => 
       `<tr>
-        <td style="border: 1px solid #000; padding: 4px; height: 18px; width: 6%;"></td>
-        <td style="border: 1px solid #000; padding: 4px; width: 50%;"></td>
-        <td style="border: 1px solid #000; padding: 4px; width: 15%;"></td>
-        <td style="border: 1px solid #000; padding: 4px; width: 14%;"></td>
-        <td style="border: 1px solid #000; padding: 4px; width: 15%;"></td>
+        <td style="border: 1px solid #000; padding: 2px; height: 15px;"></td>
+        <td style="border: 1px solid #000; padding: 2px;"></td>
+        <td style="border: 1px solid #000; padding: 2px;"></td>
+        <td style="border: 1px solid #000; padding: 2px;"></td>
+        <td style="border: 1px solid #000; padding: 2px;"></td>
       </tr>`
     ).join('');
 
@@ -919,153 +919,145 @@ app.post("/generate", async (req, res) => {
       
       @page {
         size: A4;
-        margin: 8mm;
+        margin: 5mm;
       }
       
       body { 
         font-family: Arial, sans-serif;
-        font-size: 10px;
-        line-height: 1.1;
+        font-size: 9px;
+        line-height: 1.0;
         color: #000;
         width: 100%;
-        height: 100%;
+        height: 287mm;
+        overflow: hidden;
       }
       
       .invoice-container {
         width: 100%;
-        border: 2px solid #000;
-        height: 277mm;
+        border: 1px solid #000;
+        height: 287mm;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      .section {
+        width: 100%;
         overflow: hidden;
       }
       
       .header-section {
-        padding: 8px 12px;
+        padding: 4px 8px;
         border-bottom: 1px solid #000;
-        background: #f9f9f9;
-        height: auto;
+        height: 25px;
       }
       
       .business-info {
         text-align: center;
-        padding: 10px;
+        padding: 6px;
         border-bottom: 1px solid #000;
-        height: auto;
+        height: 45px;
       }
       
-      .invoice-details-section {
-        display: flex;
+      .invoice-details {
+        display: table;
+        width: 100%;
         border-bottom: 1px solid #000;
-        height: 60px;
+        height: 50px;
+      }
+      
+      .bill-to, .invoice-meta {
+        display: table-cell;
+        vertical-align: top;
+        padding: 6px;
+        width: 50%;
       }
       
       .bill-to {
-        flex: 1;
-        padding: 8px;
         border-right: 1px solid #000;
+      }
+      
+      .items-wrapper {
+        height: 130px;
         overflow: hidden;
-      }
-      
-      .invoice-meta {
-        flex: 1;
-        padding: 8px;
-      }
-      
-      .items-section {
-        height: calc(277mm - 180px);
-        display: flex;
-        flex-direction: column;
       }
       
       .items-table {
         width: 100%;
         border-collapse: collapse;
-        flex: 1;
+        font-size: 8px;
       }
       
-      .total-section {
-        height: auto;
-      }
-      
-      .footer-sections {
-        border-top: 1px solid #000;
-        height: 80px;
+      .footer-wrapper {
+        height: 37mm;
         overflow: hidden;
       }
       
       .amount-words {
-        padding: 6px 8px;
+        padding: 4px 6px;
+        border-top: 1px solid #000;
         border-bottom: 1px solid #000;
-        background: #f9f9f9;
-        height: 40px;
-        overflow: hidden;
+        height: 20mm;
       }
       
       .terms {
-        padding: 6px 8px;
-        font-size: 9px;
-        height: 40px;
-        overflow: hidden;
-      }
-      
-      table { 
-        border-collapse: collapse; 
-        width: 100%; 
+        padding: 4px 6px;
+        height: 17mm;
       }
     </style>
 </head>
 <body>
 <div class="invoice-container">
   <!-- Header -->
-  <div class="header-section">
-    <table style="width: 100%;">
+  <div class="section header-section">
+    <table style="width: 100%; height: 100%;">
       <tr>
-        <td style="font-weight: bold; font-size: 14px; width: 70%;">BILL OF SUPPLY</td>
-        <td style="text-align: right; width: 30%;">
-          <div style="border: 1px solid #000; padding: 3px 6px; font-size: 8px; background: #f0f0f0; display: inline-block;">ORIGINAL FOR RECIPIENT</div>
+        <td style="font-weight: bold; font-size: 12px; vertical-align: middle;">BILL OF SUPPLY</td>
+        <td style="text-align: right; vertical-align: middle;">
+          <span style="border: 1px solid #000; padding: 2px 4px; font-size: 7px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</span>
         </td>
       </tr>
     </table>
   </div>
 
   <!-- Business Info -->
-  <div class="business-info">
-    <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${BILL_NAME}</div>
-    <div style="font-size: 10px; margin-bottom: 2px;">${BILL_ADDRESS}</div>
-    <div style="font-size: 10px;">Mobile: ${BILL_PHONE}</div>
+  <div class="section business-info">
+    <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">${BILL_NAME}</div>
+    <div style="font-size: 9px; margin-bottom: 1px;">${BILL_ADDRESS}</div>
+    <div style="font-size: 9px;">Mobile: ${BILL_PHONE}</div>
   </div>
   
-  <!-- Bill To and Invoice Details -->
-  <div class="invoice-details-section">
+  <!-- Invoice Details -->
+  <div class="section invoice-details">
     <div class="bill-to">
-      <div style="font-weight: bold; font-size: 10px; margin-bottom: 4px;">BILL TO</div>
-      <div style="font-size: 9px; line-height: 1.2; overflow: hidden;">${billto}</div>
+      <div style="font-weight: bold; font-size: 9px; margin-bottom: 3px;">BILL TO</div>
+      <div style="font-size: 8px; line-height: 1.1;">${billto}</div>
     </div>
     <div class="invoice-meta">
-      <table style="width: 100%; font-size: 9px;">
+      <table style="width: 100%; font-size: 8px;">
         <tr>
-          <td style="font-weight: bold; padding: 2px 0; width: 33%;">Invoice No.</td>
-          <td style="font-weight: bold; padding: 2px 0; width: 33%;">Invoice Date</td>
-          <td style="font-weight: bold; padding: 2px 0; width: 34%;">Due Date</td>
+          <td style="font-weight: bold; padding: 1px;">Invoice No.</td>
+          <td style="font-weight: bold; padding: 1px;">Invoice Date</td>
+          <td style="font-weight: bold; padding: 1px;">Due Date</td>
         </tr>
         <tr>
-          <td style="padding: 2px 0; font-size: 10px;">${invoice}</td>
-          <td style="padding: 2px 0; font-size: 10px;">${invoiceDate}</td>
-          <td style="padding: 2px 0; font-size: 10px;">${dueDateFormatted}</td>
+          <td style="padding: 1px; font-size: 9px;">${invoice}</td>
+          <td style="padding: 1px; font-size: 9px;">${invoiceDate}</td>
+          <td style="padding: 1px; font-size: 9px;">${dueDateFormatted}</td>
         </tr>
       </table>
     </div>
   </div>
   
   <!-- Items Section -->
-  <div class="items-section">
+  <div class="section items-wrapper">
     <table class="items-table">
       <thead>
         <tr style="background-color: #f0f0f0;">
-          <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 9px; width: 6%;">S.NO</th>
-          <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 9px; width: 50%;">ITEMS</th>
-          <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 9px; width: 15%;">QTY.</th>
-          <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 9px; width: 14%;">RATE</th>
-          <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 9px; width: 15%;">AMOUNT</th>
+          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 8%;">S.NO</th>
+          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 48%;">ITEMS</th>
+          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 16%;">QTY.</th>
+          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 14%;">RATE</th>
+          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 14%;">AMOUNT</th>
         </tr>
       </thead>
       <tbody>
@@ -1075,33 +1067,31 @@ app.post("/generate", async (req, res) => {
     </table>
     
     <!-- Total Section -->
-    <div class="total-section">
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; background: #f0f0f0; font-size: 10px; width: 75%;">TOTAL</td>
-          <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; font-size: 10px; width: 25%;">₹ ${total}</td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; background: #f0f0f0; font-size: 10px;">RECEIVED AMOUNT</td>
-          <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; font-size: 10px;">₹ ${received}</td>
-        </tr>
-      </table>
-    </div>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background: #f0f0f0; font-size: 9px; width: 72%;">TOTAL</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px; width: 14%;">₹ ${total}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px; width: 14%;">₹ ${total}</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background: #f0f0f0; font-size: 9px;">RECEIVED AMOUNT</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px;">₹ ${received}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px;">₹ ${received}</td>
+      </tr>
+    </table>
   </div>
   
-  <!-- Footer Sections -->
-  <div class="footer-sections">
-    <!-- Amount in Words -->
+  <!-- Footer -->
+  <div class="section footer-wrapper">
     <div class="amount-words">
-      <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">Total Amount (in words)</div>
-      <div style="font-size: 9px; line-height: 1.2; overflow: hidden;">${totalInWords}</div>
+      <div style="font-weight: bold; font-size: 9px; margin-bottom: 2px;">Total Amount (in words)</div>
+      <div style="font-size: 8px; line-height: 1.1;">${totalInWords}</div>
     </div>
     
-    <!-- Terms and Conditions -->
     <div class="terms">
-      <div style="font-weight: bold; font-size: 9px; margin-bottom: 4px;">Terms and Conditions</div>
-      <div style="font-size: 8px; line-height: 1.3;">1. Goods once sold will not be taken back or exchanged</div>
-      <div style="font-size: 8px; line-height: 1.3;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
+      <div style="font-weight: bold; font-size: 8px; margin-bottom: 3px;">Terms and Conditions</div>
+      <div style="font-size: 7px; line-height: 1.2;">1. Goods once sold will not be taken back or exchanged</div>
+      <div style="font-size: 7px; line-height: 1.2;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
     </div>
   </div>
 </div>
@@ -1112,10 +1102,10 @@ app.post("/generate", async (req, res) => {
       format: 'A4',
       orientation: 'portrait',
       border: {
-        top: '5mm',
-        right: '5mm', 
-        bottom: '5mm',
-        left: '5mm'
+        top: '3mm',
+        right: '3mm', 
+        bottom: '3mm',
+        left: '3mm'
       },
       header: {
         height: '0mm'
@@ -1125,7 +1115,6 @@ app.post("/generate", async (req, res) => {
       },
       type: 'pdf',
       quality: '100',
-      // Optimized for single page
       timeout: 30000,
       childProcessOptions: {
         env: {
@@ -1136,13 +1125,16 @@ app.post("/generate", async (req, res) => {
       httpHeaders: {},
       localUrlAccess: false,
       allowLocalFilesAccess: false,
-      // CRITICAL: Single page optimization
-      zoomFactor: 0.85, // Slightly reduce zoom to fit better
-      dpi: 72, // Lower DPI for compact layout
-      renderDelay: 500,
-      // Force single page
+      // ULTRA COMPACT SETTINGS for single page
+      zoomFactor: 0.75, // Maximum zoom reduction
+      dpi: 64, // Lower DPI for maximum compression
+      renderDelay: 300,
+      // Force exact dimensions
       height: '297mm',
-      width: '210mm'
+      width: '210mm',
+      // Additional compression options
+      base: null,
+      paginationOffset: 0
     }).toStream((err, stream) => {
       if (err) {
         console.error("PDF generation error:", err);
