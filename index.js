@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const puppeteer = require("puppeteer");
+const PDFDocument = require("pdfkit");
 const mongoose = require("mongoose");
 
 const app = express();
@@ -395,7 +395,7 @@ app.get("/", (req, res) => {
     </head>
     <body>
       <div class="container">
-        <h2 style="text-align: center; color: #333;">Invoice Generator with Database</h2>
+        <h2 style="text-align: center; color: #333;">Invoice Generator (Render Free Optimized)</h2>
         
         <!-- Search Section -->
         <div class="search-section">
@@ -470,7 +470,7 @@ app.get("/", (req, res) => {
       </div>
 
       <script>
-        // Prevent accidental page reload
+        // [Same JavaScript code as before - unchanged]
         let formModified = false;
         
         window.addEventListener('beforeunload', function (e) {
@@ -533,17 +533,14 @@ app.get("/", (req, res) => {
         }
 
         function populateForm(invoice) {
-          // Clear existing items
           document.getElementById('items').innerHTML = '';
           
-          // Populate basic fields
           document.querySelector('input[name="billto"]').value = invoice.billTo;
           document.querySelector('input[name="invoice"]').value = invoice.invoiceNo;
           document.querySelector('input[name="date"]').value = new Date(invoice.date).toISOString().split('T')[0];
           document.querySelector('input[name="duedate"]').value = new Date(invoice.dueDate).toISOString().split('T')[0];
           document.querySelector('input[name="received"]').value = invoice.received;
           
-          // Populate items
           invoice.items.forEach(item => {
             addItem();
             const lastItem = document.getElementById('items').lastElementChild;
@@ -570,7 +567,6 @@ app.get("/", (req, res) => {
           document.getElementById('searchMessage').innerHTML = '';
           clearEditingMode();
           
-          // Reset dates to today
           const todayIST = new Date().toISOString().split('T')[0];
           document.querySelector('input[name="date"]').value = todayIST;
           document.querySelector('input[name="duedate"]').value = todayIST;
@@ -671,7 +667,6 @@ app.get("/", (req, res) => {
           document.getElementById("total").textContent = total.toFixed(2);
         }
 
-        // Add event listeners to existing form fields
         document.querySelectorAll('input, select').forEach(input => {
           input.addEventListener('input', markFormModified);
         });
@@ -736,7 +731,6 @@ app.get("/", (req, res) => {
               a.href = url;
               a.download = "invoice_" + data.billto + "_" + data.invoice + ".pdf";
               
-              // For iOS compatibility
               if (window.navigator.msSaveOrOpenBlob) {
                 window.navigator.msSaveOrOpenBlob(blob, "invoice_" + data.billto + ".pdf");
               } else {
@@ -745,13 +739,9 @@ app.get("/", (req, res) => {
                 document.body.removeChild(a);
               }
               
-              // Clean up the URL object
               setTimeout(() => window.URL.revokeObjectURL(url), 100);
-              
-              // Reset form modification flag after successful download
               formModified = false;
               
-              // Show success message
               if (isEditing) {
                 showMessage(\`Invoice \${data.invoice} updated and downloaded successfully!\`, 'success');
               } else {
@@ -768,7 +758,6 @@ app.get("/", (req, res) => {
             });
         });
 
-        // Add first item by default
         addItem();
       </script>
     </body>
@@ -866,409 +855,255 @@ app.post("/generate", async (req, res) => {
         }
       } catch (dbError) {
         console.log("Database operation failed, continuing with PDF generation:", dbError.message);
-        // Continue with PDF generation even if database save fails
       }
     }
 
-    // Generate PDF with Puppeteer - OPTIMIZED FOR SINGLE PAGE
-    const rows = items.map(
-      (item, i) =>
-        `<tr>
-          <td>${i + 1}</td>
-          <td>${item.name}</td>
-          <td>${item.qty} ${item.unit}</td>
-          <td>₹${item.rate}</td>
-          <td>₹${item.amount}</td>
-        </tr>`
-    ).join("");
+    // Generate PDF with PDFKit - LIGHTWEIGHT & RENDER.COM FRIENDLY
+    const doc = new PDFDocument({ 
+      size: 'A4', 
+      margin: 30,
+      bufferPages: true 
+    });
 
-    // Calculate minimum rows needed (ensure at least 8 rows for proper spacing)
-    const minRows = Math.max(8, items.length);
-    const emptyRowsCount = minRows - items.length;
-    
-    const emptyRows = Array(emptyRowsCount).fill().map(() => 
-      `<tr class="empty-row">
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-      </tr>`
-    ).join('');
-
-    const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees";
-
-    // Format dates
-    const invoiceDate = new Date(date).toLocaleDateString('en-GB');
-    const dueDateFormatted = new Date(duedate).toLocaleDateString('en-GB');
-
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-      * { 
-        box-sizing: border-box; 
-        margin: 0; 
-        padding: 0; 
-      }
-      
-      body { 
-        font-family: Arial, sans-serif;
-        font-size: 10px;
-        line-height: 1.2;
-        color: #000;
-        width: 210mm;
-        height: 297mm;
-        margin: 0;
-        padding: 8mm;
-        overflow: hidden;
-        background: white;
-      }
-      
-      .invoice-container {
-        width: 100%;
-        height: 100%;
-        border: 2px solid #000;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      /* Header Section - Fixed height */
-      .header {
-        padding: 8px 12px;
-        border-bottom: 1px solid #000;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 35px;
-        flex-shrink: 0;
-      }
-      
-      .header h1 {
-        font-size: 14px;
-        font-weight: bold;
-        margin: 0;
-      }
-      
-      .original-tag {
-        border: 1px solid #000;
-        padding: 3px 6px;
-        font-size: 8px;
-        background: #f0f0f0;
-      }
-      
-      /* Business Info - Fixed height */
-      .business-info {
-        text-align: center;
-        padding: 10px;
-        border-bottom: 1px solid #000;
-        height: 55px;
-        flex-shrink: 0;
-      }
-      
-      .business-name {
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 4px;
-      }
-      
-      .business-details {
-        font-size: 9px;
-        line-height: 1.3;
-      }
-      
-      /* Invoice Details - Fixed height */
-      .invoice-details {
-        display: flex;
-        border-bottom: 1px solid #000;
-        height: 65px;
-        flex-shrink: 0;
-      }
-      
-      .bill-to {
-        flex: 1;
-        padding: 8px 12px;
-        border-right: 1px solid #000;
-      }
-      
-      .invoice-meta {
-        flex: 1;
-        padding: 8px 12px;
-      }
-      
-      .section-title {
-        font-weight: bold;
-        font-size: 9px;
-        margin-bottom: 4px;
-      }
-      
-      .meta-table {
-        width: 100%;
-        font-size: 8px;
-        border-collapse: collapse;
-      }
-      
-      .meta-table th {
-        font-weight: bold;
-        padding: 2px 4px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-      }
-      
-      .meta-table td {
-        padding: 2px 4px;
-        font-weight: normal;
-      }
-      
-      /* Items Section - Flexible */
-      .items-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-      
-      .items-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 9px;
-        height: 100%;
-      }
-      
-      .items-table th {
-        background-color: #f0f0f0;
-        border: 1px solid #000;
-        padding: 6px 4px;
-        font-weight: bold;
-        text-align: center;
-        height: 25px;
-      }
-      
-      .items-table td {
-        border: 1px solid #000;
-        padding: 4px 6px;
-        text-align: center;
-        height: 20px;
-        vertical-align: middle;
-      }
-      
-      .items-table td:nth-child(2) {
-        text-align: left;
-        max-width: 120px;
-        word-wrap: break-word;
-      }
-      
-      .items-table td:nth-child(4),
-      .items-table td:nth-child(5) {
-        text-align: right;
-      }
-      
-      .empty-row td {
-        height: 18px;
-        border-bottom: 1px solid #ddd;
-      }
-      
-      /* Total Section - Fixed height */
-      .total-section {
-        border-top: 2px solid #000;
-        flex-shrink: 0;
-      }
-      
-      .total-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 10px;
-      }
-      
-      .total-table td {
-        border: 1px solid #000;
-        padding: 6px 8px;
-        height: 25px;
-      }
-      
-      .total-label {
-        background: #f0f0f0;
-        font-weight: bold;
-        text-align: center;
-        width: 60%;
-      }
-      
-      .total-amount {
-        text-align: right;
-        font-weight: bold;
-        width: 20%;
-      }
-      
-      /* Footer - Fixed height */
-      .footer {
-        border-top: 1px solid #000;
-        padding: 8px 12px;
-        height: 65px;
-        flex-shrink: 0;
-      }
-      
-      .amount-words {
-        margin-bottom: 8px;
-      }
-      
-      .terms {
-        font-size: 8px;
-        line-height: 1.3;
-      }
-      
-      .terms-title {
-        font-weight: bold;
-        margin-bottom: 3px;
-      }
-      
-      /* Column widths */
-      .col-sno { width: 8%; }
-      .col-item { width: 45%; }
-      .col-qty { width: 15%; }
-      .col-rate { width: 16%; }
-      .col-amount { width: 16%; }
-    </style>
-</head>
-<body>
-<div class="invoice-container">
-  <!-- Header -->
-  <div class="header">
-    <h1>BILL OF SUPPLY</h1>
-    <div class="original-tag">ORIGINAL FOR RECIPIENT</div>
-  </div>
-
-  <!-- Business Info -->
-  <div class="business-info">
-    <div class="business-name">${BILL_NAME}</div>
-    <div class="business-details">
-      ${BILL_ADDRESS}<br>
-      Mobile: ${BILL_PHONE}
-    </div>
-  </div>
-  
-  <!-- Invoice Details -->
-  <div class="invoice-details">
-    <div class="bill-to">
-      <div class="section-title">BILL TO</div>
-      <div style="font-size: 9px; line-height: 1.3;">${billto}</div>
-    </div>
-    <div class="invoice-meta">
-      <table class="meta-table">
-        <tr>
-          <th>Invoice No.</th>
-          <th>Invoice Date</th>
-          <th>Due Date</th>
-        </tr>
-        <tr>
-          <td>${invoice}</td>
-          <td>${invoiceDate}</td>
-          <td>${dueDateFormatted}</td>
-        </tr>
-      </table>
-    </div>
-  </div>
-  
-  <!-- Items Section -->
-  <div class="items-section">
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th class="col-sno">S.NO</th>
-          <th class="col-item">ITEMS</th>
-          <th class="col-qty">QTY.</th>
-          <th class="col-rate">RATE</th>
-          <th class="col-amount">AMOUNT</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows}
-        ${emptyRows}
-      </tbody>
-    </table>
-  </div>
-  
-  <!-- Total Section -->
-  <div class="total-section">
-    <table class="total-table">
-      <tr>
-        <td class="total-label">TOTAL</td>
-        <td class="total-amount">₹ ${total}</td>
-        <td class="total-amount">₹ ${total}</td>
-      </tr>
-      <tr>
-        <td class="total-label">RECEIVED AMOUNT</td>
-        <td class="total-amount">₹ ${received}</td>
-        <td class="total-amount">₹ ${received}</td>
-      </tr>
-    </table>
-  </div>
-  
-  <!-- Footer -->
-  <div class="footer">
-    <div class="amount-words">
-      <div style="font-weight: bold; font-size: 9px; margin-bottom: 2px;">Total Amount (in words)</div>
-      <div style="font-size: 9px;">${totalInWords}</div>
-    </div>
-    
-    <div class="terms">
-      <div class="terms-title">Terms and Conditions</div>
-      <div>1. Goods once sold will not be taken back or exchanged</div>
-      <div>2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
-    </div>
-  </div>
-</div>
-</body>
-</html>`;
-
-    // Use Puppeteer for PDF generation (works great on Render.com)
-    let browser;
-    try {
-      browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process', // Important for Render.com
-          '--disable-gpu'
-        ]
-      });
-
-      const page = await browser.newPage();
-      
-      // Set viewport and content
-      await page.setViewport({ width: 794, height: 1123 }); // A4 dimensions
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-
-      // Generate PDF with precise settings for single page
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '5mm',
-          right: '5mm',
-          bottom: '5mm',
-          left: '5mm'
-        },
-        preferCSSPageSize: true
-      });
-
-      await browser.close();
-
-      // Send PDF response
+    // Collect PDF data
+    const buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(buffers);
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", 'attachment; filename="invoice_' + billto.replace(/[^a-zA-Z0-9]/g, '_') + '_' + invoice + '.pdf"');
-      res.send(pdfBuffer);
+      res.send(pdfData);
+    });
 
-    } catch (pdfError) {
-      if (browser) await browser.close();
-      console.error("PDF generation error:", pdfError);
-      return res.status(500).json({ success: false, message: "PDF generation failed: " + pdfError.message });
+    // Helper functions for PDF layout
+    function drawBox(x, y, width, height, fillColor = null) {
+      if (fillColor) {
+        doc.rect(x, y, width, height).fill(fillColor);
+      } else {
+        doc.rect(x, y, width, height).stroke();
+      }
     }
+
+    function drawText(text, x, y, options = {}) {
+      doc.text(text, x, y, options);
+    }
+
+    // Page dimensions
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const margin = 30;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Colors
+    const headerGray = '#f0f0f0';
+    const borderColor = '#000000';
+
+    // Start PDF generation
+    doc.strokeColor(borderColor);
+    doc.fillColor('#000000');
+
+    // Main border
+    drawBox(margin, margin, contentWidth, pageHeight - (margin * 2));
+
+    let currentY = margin + 10;
+
+    // Header Section
+    doc.fontSize(16).font('Helvetica-Bold');
+    drawText('BILL OF SUPPLY', margin + 20, currentY);
+    
+    doc.fontSize(8).font('Helvetica');
+    doc.rect(pageWidth - 150, currentY - 2, 120, 15).fill(headerGray);
+    doc.fillColor('#000000');
+    drawText('ORIGINAL FOR RECIPIENT', pageWidth - 145, currentY + 2);
+    
+    currentY += 25;
+    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
+
+    // Business Info Section
+    currentY += 15;
+    doc.fontSize(14).font('Helvetica-Bold');
+    drawText(BILL_NAME, margin + 20, currentY, { align: 'center', width: contentWidth - 40 });
+    
+    currentY += 20;
+    doc.fontSize(10).font('Helvetica');
+    drawText(BILL_ADDRESS, margin + 20, currentY, { align: 'center', width: contentWidth - 40 });
+    
+    currentY += 15;
+    drawText(`Mobile: ${BILL_PHONE}`, margin + 20, currentY, { align: 'center', width: contentWidth - 40 });
+    
+    currentY += 20;
+    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
+
+    // Invoice Details Section
+    currentY += 15;
+    const detailsHeight = 60;
+    const halfWidth = contentWidth / 2;
+
+    // Bill To section
+    doc.fontSize(10).font('Helvetica-Bold');
+    drawText('BILL TO', margin + 20, currentY);
+    
+    currentY += 15;
+    doc.fontSize(9).font('Helvetica');
+    const billToLines = billto.split('\n');
+    billToLines.forEach((line, index) => {
+      drawText(line, margin + 20, currentY + (index * 12));
+    });
+
+    // Invoice meta section (right side)
+    const metaX = margin + halfWidth + 10;
+    let metaY = currentY - 15;
+    
+    doc.fontSize(9).font('Helvetica-Bold');
+    drawText('Invoice No.', metaX, metaY);
+    drawText('Invoice Date', metaX + 80, metaY);
+    drawText('Due Date', metaX + 160, metaY);
+    
+    metaY += 15;
+    doc.fontSize(9).font('Helvetica');
+    drawText(invoice, metaX, metaY);
+    drawText(new Date(date).toLocaleDateString('en-GB'), metaX + 80, metaY);
+    drawText(new Date(duedate).toLocaleDateString('en-GB'), metaX + 160, metaY);
+
+    // Vertical separator
+    doc.moveTo(margin + halfWidth, currentY - 15).lineTo(margin + halfWidth, currentY + 45).stroke();
+
+    currentY += 60;
+    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
+
+    // Items Table
+    currentY += 10;
+    const tableStartY = currentY;
+    const rowHeight = 20;
+    const headerHeight = 25;
+
+    // Table headers
+    const colWidths = [40, 280, 80, 80, 80]; // S.No, Items, Qty, Rate, Amount
+    const colX = [
+      margin + 10,
+      margin + 50,
+      margin + 330,
+      margin + 410,
+      margin + 490
+    ];
+
+    // Header background
+    doc.rect(margin, currentY, contentWidth, headerHeight).fill(headerGray);
+    doc.fillColor('#000000');
+
+    // Header borders
+    doc.rect(margin, currentY, contentWidth, headerHeight).stroke();
+    for (let i = 1; i < colX.length; i++) {
+      doc.moveTo(colX[i], currentY).lineTo(colX[i], currentY + headerHeight).stroke();
+    }
+
+    doc.fontSize(9).font('Helvetica-Bold');
+    drawText('S.NO', colX[0] + 5, currentY + 8);
+    drawText('ITEMS', colX[1] + 5, currentY + 8);
+    drawText('QTY.', colX[2] + 5, currentY + 8);
+    drawText('RATE', colX[3] + 5, currentY + 8);
+    drawText('AMOUNT', colX[4] + 5, currentY + 8);
+
+    currentY += headerHeight;
+
+    // Table rows
+    doc.fontSize(8).font('Helvetica');
+    
+    // Data rows
+    items.forEach((item, index) => {
+      // Row border
+      doc.rect(margin, currentY, contentWidth, rowHeight).stroke();
+      
+      // Column separators
+      for (let i = 1; i < colX.length; i++) {
+        doc.moveTo(colX[i], currentY).lineTo(colX[i], currentY + rowHeight).stroke();
+      }
+
+      // Row data
+      drawText((index + 1).toString(), colX[0] + 5, currentY + 6);
+      drawText(item.name.substring(0, 35), colX[1] + 5, currentY + 6); // Truncate long names
+      drawText(`${item.qty} ${item.unit}`, colX[2] + 5, currentY + 6);
+      drawText(`₹${item.rate}`, colX[3] + 5, currentY + 6);
+      drawText(`₹${item.amount}`, colX[4] + 5, currentY + 6);
+
+      currentY += rowHeight;
+    });
+
+    // Empty rows to fill space
+    const minRows = 8;
+    const emptyRows = Math.max(0, minRows - items.length);
+    
+    for (let i = 0; i < emptyRows; i++) {
+      doc.rect(margin, currentY, contentWidth, rowHeight).stroke();
+      
+      for (let j = 1; j < colX.length; j++) {
+        doc.moveTo(colX[j], currentY).lineTo(colX[j], currentY + rowHeight).stroke();
+      }
+      
+      currentY += rowHeight;
+    }
+
+    // Total Section
+    const totalHeight = 25;
+    
+    // Total row
+    doc.rect(margin, currentY, contentWidth, totalHeight).stroke();
+    doc.rect(margin, currentY, colWidths[0] + colWidths[1] + colWidths[2], totalHeight).fill(headerGray);
+    doc.fillColor('#000000');
+    
+    doc.fontSize(10).font('Helvetica-Bold');
+    drawText('TOTAL', margin + (contentWidth * 0.6) / 2, currentY + 8, { align: 'center' });
+    drawText(`₹ ${total}`, colX[3] + 5, currentY + 8);
+    drawText(`₹ ${total}`, colX[4] + 5, currentY + 8);
+
+    // Column separators for total row
+    doc.moveTo(colX[3], currentY).lineTo(colX[3], currentY + totalHeight).stroke();
+    doc.moveTo(colX[4], currentY).lineTo(colX[4], currentY + totalHeight).stroke();
+
+    currentY += totalHeight;
+
+    // Received Amount row
+    doc.rect(margin, currentY, contentWidth, totalHeight).stroke();
+    doc.rect(margin, currentY, colWidths[0] + colWidths[1] + colWidths[2], totalHeight).fill(headerGray);
+    doc.fillColor('#000000');
+    
+    drawText('RECEIVED AMOUNT', margin + (contentWidth * 0.6) / 2, currentY + 8, { align: 'center' });
+    drawText(`₹ ${received}`, colX[3] + 5, currentY + 8);
+    drawText(`₹ ${received}`, colX[4] + 5, currentY + 8);
+
+    doc.moveTo(colX[3], currentY).lineTo(colX[3], currentY + totalHeight).stroke();
+    doc.moveTo(colX[4], currentY).lineTo(colX[4], currentY + totalHeight).stroke();
+
+    currentY += totalHeight + 15;
+    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
+
+    // Amount in Words
+    currentY += 15;
+    doc.fontSize(10).font('Helvetica-Bold');
+    drawText('Total Amount (in words)', margin + 20, currentY);
+    
+    currentY += 15;
+    doc.fontSize(9).font('Helvetica');
+    const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees";
+    drawText(totalInWords, margin + 20, currentY);
+
+    currentY += 30;
+    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
+
+    // Terms and Conditions
+    currentY += 15;
+    doc.fontSize(9).font('Helvetica-Bold');
+    drawText('Terms and Conditions', margin + 20, currentY);
+    
+    currentY += 15;
+    doc.fontSize(8).font('Helvetica');
+    drawText('1. Goods once sold will not be taken back or exchanged', margin + 20, currentY);
+    
+    currentY += 12;
+    drawText(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 20, currentY);
+
+    // Finalize PDF
+    doc.end();
 
   } catch (error) {
     console.error("Error generating invoice:", error);
@@ -1320,4 +1155,4 @@ app.delete("/api/invoice/:invoiceNo", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log("✅ Enhanced Invoice app with Puppeteer running on port", PORT));
+app.listen(PORT, () => console.log("✅ Render.com Optimized Invoice app running on port", PORT));
