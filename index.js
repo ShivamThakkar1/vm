@@ -89,15 +89,15 @@ app.get("/", (req, res) => {
   res.send(`
     <html>
     <head>
-      <title>Invoice Generator</title>
+      <title>Professional Invoice Generator</title>
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
         * { box-sizing: border-box; }
         body { 
-          font-family: sans-serif; 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
           padding: 15px; 
           margin: 0; 
-          background: #f8f8f8; 
+          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
           font-size: 14px;
         }
         
@@ -111,50 +111,71 @@ app.get("/", (req, res) => {
           padding: 12px; 
           margin: 8px 0; 
           font-size: 16px; 
-          border: 1px solid #ddd;
-          border-radius: 4px;
+          border: 2px solid #e1e5e9;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+          border-color: #007bff;
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
         
         /* Search Section */
         .search-section {
-          background: #e3f2fd;
-          padding: 20px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 25px;
+          border-radius: 15px;
+          margin-bottom: 25px;
+          box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .search-section h3 {
+          margin: 0 0 20px 0;
+          font-size: 20px;
+          font-weight: 600;
         }
         
         .search-row {
           display: flex;
-          gap: 10px;
+          gap: 15px;
           align-items: end;
         }
         
         .search-row input {
           flex: 1;
           margin: 0;
+          border: none;
+          background: rgba(255,255,255,0.9);
         }
         
         .search-row button {
           width: auto;
-          padding: 12px 20px;
+          padding: 12px 25px;
           margin: 0;
-          background: #2196f3;
+          background: #28a745;
           color: white;
-          font-weight: bold;
+          font-weight: 600;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
         }
         
         .search-row button:hover {
-          background: #1976d2;
+          background: #218838;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         
         .clear-btn {
-          background: #ff9800 !important;
-          margin-left: 5px !important;
+          background: #fd7e14 !important;
+          margin-left: 10px !important;
         }
         
         .clear-btn:hover {
-          background: #f57c00 !important;
+          background: #e8660c !important;
         }
         
         @media (max-width: 768px) {
@@ -167,138 +188,102 @@ app.get("/", (req, res) => {
           }
         }
         
-        /* Mobile-first responsive item grid */
-        .item { 
-          display: grid;
-          gap: 8px; 
-          margin-bottom: 12px; 
-          padding: 12px;
+        /* Professional Item Table */
+        .items-container {
           background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+          margin-bottom: 25px;
         }
         
-        .item input, .item select { 
-          padding: 10px; 
-          margin: 4px 0; 
+        .item-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
           font-size: 14px;
-          border: 1px solid #ddd;
+        }
+        
+        .item-table th {
+          background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+          color: white;
+          padding: 15px 8px;
+          text-align: center;
+          font-weight: 600;
+          border: 1px solid #dee2e6;
+          font-size: 13px;
+        }
+        
+        .item-table td {
+          padding: 12px 8px;
+          border: 1px solid #dee2e6;
+          background: #fff;
+          vertical-align: middle;
+        }
+        
+        .item-table tbody tr:nth-child(even) {
+          background: #f8f9fa;
+        }
+        
+        .item-table tbody tr:hover {
+          background: #e3f2fd;
+          transition: background-color 0.2s ease;
+        }
+        
+        .item-table input, .item-table select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ced4da;
+          border-radius: 4px;
+          margin: 0;
+          font-size: 13px;
+        }
+        
+        .item-table input:focus, .item-table select:focus {
+          border-color: #007bff;
+          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+        }
+        
+        .amount-display {
+          background: #f8f9fa;
+          padding: 8px;
+          text-align: right;
+          font-weight: 600;
+          color: #28a745;
           border-radius: 4px;
         }
         
-        /* FIXED: Remove button styling - more specific selector */
-        .item .remove-btn { 
-          background: #ff4444 !important; 
+        .remove-btn { 
+          background: #dc3545 !important; 
           color: white !important; 
           border: none !important; 
-          padding: 10px 15px !important; 
+          padding: 8px 15px !important; 
           cursor: pointer !important; 
-          border-radius: 4px !important; 
-          font-size: 14px !important;
+          border-radius: 6px !important; 
+          font-size: 12px !important;
           width: auto !important;
-          margin: 8px 0 !important;
-          align-self: end;
-          justify-self: center;
+          margin: 0 !important;
+          font-weight: 600;
+          transition: all 0.3s ease;
         }
         
-        /* Add this new rule for desktop layout */
-        @media (min-width: 769px) {
-          .item .remove-btn {
-            grid-column: 7;
-            margin-top: auto !important;
-            margin-bottom: auto !important;
-          }
-        }
-        
-        .item .remove-btn:hover {
-          background: #cc0000 !important;
-        }
-        
-        /* Mobile layout - stacked */
-        @media (max-width: 768px) {
-          .item {
-            grid-template-columns: 1fr;
-          }
-          
-          .item-header {
-            display: grid !important;
-            grid-template-columns: 1fr;
-            gap: 0;
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #333 !important;
-            color: white !important;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            text-align: center;
-          }
-          
-          .item-header div {
-            display: none;
-          }
-          
-          .item-header::before {
-            content: "Item Details";
-          }
-          
-          .mobile-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 4px;
-            font-weight: bold;
-            display: block !important;
-          }
-        }
-        
-        /* Desktop layout */
-        @media (min-width: 769px) {
-          .item {
-            grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 1fr 1.2fr 1fr;
-            align-items: end;
-            padding: 8px;
-          }
-          
-          .item-header { 
-            display: grid; 
-            grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 1fr 1.2fr 1fr;
-            gap: 8px; 
-            margin-bottom: 8px; 
-            font-weight: bold; 
-            font-size: 14px; 
-            background: #333;
-            padding: 12px 8px;
-            border-radius: 8px;
-          }
-          
-          .item-header div { 
-            text-align: center; 
-            padding: 8px; 
-            background: transparent;
-            border-radius: 4px;
-            color: white;
-          }
-          
-          .mobile-label {
-            display: none;
-          }
-          
-          .item input, .item select {
-            margin: 0;
-          }
+        .remove-btn:hover {
+          background: #c82333 !important;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         .form-section { 
-          margin-bottom: 20px; 
+          margin-bottom: 25px; 
           background: white;
-          padding: 15px;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          padding: 20px;
+          border-radius: 15px;
+          box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
         
         .form-row { 
           display: flex; 
-          gap: 10px; 
+          gap: 15px; 
           flex-wrap: wrap;
         }
         
@@ -324,43 +309,60 @@ app.get("/", (req, res) => {
         .three-col { 
           display: grid; 
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-          gap: 10px; 
+          gap: 15px; 
         }
         
         .received-section { 
-          margin-top: 15px; 
+          margin-top: 20px; 
         }
         
         button[type="submit"] {
-          background: #007bff;
+          background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
           color: white;
-          font-weight: bold;
-          padding: 15px;
+          font-weight: 600;
+          padding: 18px;
           font-size: 16px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        button[type="submit"]:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
         
         button[type="button"]:not(.remove-btn):not(.search-row button) {
-          background: #28a745;
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
           color: white;
-          font-weight: bold;
+          font-weight: 600;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        button[type="button"]:not(.remove-btn):not(.search-row button):hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
         
         .total-display {
-          font-size: 18px;
-          font-weight: bold;
-          color: #007bff;
+          font-size: 24px;
+          font-weight: 700;
+          color: #28a745;
           text-align: center;
-          padding: 15px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          margin: 10px 0;
+          padding: 20px;
+          background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+          border-radius: 12px;
+          margin: 15px 0;
+          border: 2px solid #28a745;
         }
         
         .alert {
-          padding: 12px;
-          margin: 10px 0;
-          border-radius: 4px;
-          font-weight: bold;
+          padding: 15px;
+          margin: 15px 0;
+          border-radius: 8px;
+          font-weight: 600;
         }
         
         .alert-success {
@@ -382,27 +384,50 @@ app.get("/", (req, res) => {
         }
         
         .editing-indicator {
-          background: #fff3cd;
+          background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
           color: #856404;
-          border: 1px solid #ffeaa7;
-          padding: 10px;
-          border-radius: 4px;
-          margin-bottom: 15px;
+          border: 2px solid #ffc107;
+          padding: 15px;
+          border-radius: 8px;
+          margin-bottom: 20px;
           text-align: center;
-          font-weight: bold;
+          font-weight: 600;
+        }
+        
+        label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          color: #495057;
+          font-size: 14px;
+        }
+        
+        h2 {
+          text-align: center;
+          color: #343a40;
+          font-size: 28px;
+          font-weight: 700;
+          margin-bottom: 30px;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h3 {
+          color: #495057;
+          font-weight: 600;
+          margin-bottom: 15px;
         }
       </style>
     </head>
     <body>
       <div class="container">
-        <h2 style="text-align: center; color: #333;">Invoice Generator (Render Free Optimized)</h2>
+        <h2>🧾 Professional Invoice Generator</h2>
         
         <!-- Search Section -->
         <div class="search-section">
-          <h3 style="margin-bottom: 15px; color: #333;">Search & Edit Existing Invoice</h3>
+          <h3>🔍 Search & Edit Existing Invoice</h3>
           <div class="search-row">
             <div>
-              <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Invoice Number:</label>
+              <label style="color: white; margin-bottom: 8px;">Invoice Number:</label>
               <input id="searchInvoice" placeholder="Enter invoice number to search" />
             </div>
             <button type="button" onclick="searchInvoice()">Search Invoice</button>
@@ -413,7 +438,7 @@ app.get("/", (req, res) => {
         
         <!-- Editing Indicator -->
         <div id="editingIndicator" class="editing-indicator" style="display: none;">
-          Editing Invoice: <span id="editingInvoiceNo"></span>
+          ✏️ Editing Invoice: <span id="editingInvoiceNo"></span>
         </div>
         
         <form id="form">
@@ -421,57 +446,65 @@ app.get("/", (req, res) => {
           <input type="hidden" id="originalInvoiceNo" value="" />
           
           <div class="form-section">
-            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Bill To:</label>
+            <h3>📋 Customer Information</h3>
+            <label>Bill To:</label>
             <input name="billto" placeholder="Enter customer name and address" required />
           </div>
           
           <div class="form-section">
+            <h3>📄 Invoice Details</h3>
             <div class="three-col">
               <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Invoice No.:</label>
+                <label>Invoice Number:</label>
                 <input name="invoice" placeholder="Enter invoice number" required />
               </div>
               <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Invoice Date:</label>
+                <label>Invoice Date:</label>
                 <input name="date" type="date" value="${todayIST}" required />
               </div>
               <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Due Date:</label>
+                <label>Due Date:</label>
                 <input name="duedate" type="date" value="${todayIST}" />
               </div>
             </div>
           </div>
 
-          <div class="form-section">
-            <div class="item-header">
-              <div>Item Name</div>
-              <div>Qty</div>
-              <div>Unit</div>
-              <div>Rate</div>
-              <div>Discount</div>
-              <div>Amount</div>
-              <div>Action</div>
-            </div>
-
-            <div id="items"></div>
-            <button type="button" onclick="addItem()">+ Add Item</button>
+          <div class="items-container">
+            <h3>📦 Items & Services</h3>
+            <table class="item-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px;">S.No</th>
+                  <th style="width: 250px;">Item/Service Description</th>
+                  <th style="width: 80px;">Quantity</th>
+                  <th style="width: 80px;">Unit</th>
+                  <th style="width: 90px;">Rate (₹)</th>
+                  <th style="width: 90px;">Discount</th>
+                  <th style="width: 100px;">Amount (₹)</th>
+                  <th style="width: 80px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="itemsTableBody">
+              </tbody>
+            </table>
+            <button type="button" onclick="addItem()">➕ Add New Item</button>
           </div>
           
           <div class="form-section">
-            <div class="total-display">Total: ₹<span id="total">0</span></div>
+            <div class="total-display">💰 Total Amount: ₹<span id="total">0.00</span></div>
             <div class="received-section">
-              <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Received Amount:</label>
-              <input name="received" type="number" step="0.01" placeholder="Enter received amount (default: 0)" />
+              <label>Amount Received:</label>
+              <input name="received" type="number" step="0.01" placeholder="Enter amount received (default: 0)" />
             </div>
           </div>
           
-          <button type="submit" id="submitBtn">Save & Download PDF</button>
+          <button type="submit" id="submitBtn">💾 Save & Download PDF</button>
         </form>
       </div>
 
       <script>
-        // [Same JavaScript code as before - unchanged]
         let formModified = false;
+        let itemCounter = 0;
         
         window.addEventListener('beforeunload', function (e) {
           if (formModified) {
@@ -498,14 +531,14 @@ app.get("/", (req, res) => {
           document.getElementById('originalInvoiceNo').value = invoiceNo;
           document.getElementById('editingIndicator').style.display = 'block';
           document.getElementById('editingInvoiceNo').textContent = invoiceNo;
-          document.getElementById('submitBtn').textContent = 'Update & Download PDF';
+          document.getElementById('submitBtn').innerHTML = '🔄 Update & Download PDF';
         }
 
         function clearEditingMode() {
           document.getElementById('isEditing').value = 'false';
           document.getElementById('originalInvoiceNo').value = '';
           document.getElementById('editingIndicator').style.display = 'none';
-          document.getElementById('submitBtn').textContent = 'Save & Download PDF';
+          document.getElementById('submitBtn').innerHTML = '💾 Save & Download PDF';
         }
 
         function searchInvoice() {
@@ -521,7 +554,7 @@ app.get("/", (req, res) => {
               if (data.success) {
                 populateForm(data.invoice);
                 setEditingMode(invoiceNo);
-                showMessage(\`Invoice \${invoiceNo} loaded successfully! You can now edit and update it.\`, 'success');
+                showMessage(\`✅ Invoice \${invoiceNo} loaded successfully! You can now edit and update it.\`, 'success');
               } else {
                 showMessage(data.message || 'Invoice not found', 'error');
               }
@@ -533,7 +566,8 @@ app.get("/", (req, res) => {
         }
 
         function populateForm(invoice) {
-          document.getElementById('items').innerHTML = '';
+          document.getElementById('itemsTableBody').innerHTML = '';
+          itemCounter = 0;
           
           document.querySelector('input[name="billto"]').value = invoice.billTo;
           document.querySelector('input[name="invoice"]').value = invoice.invoiceNo;
@@ -543,8 +577,8 @@ app.get("/", (req, res) => {
           
           invoice.items.forEach(item => {
             addItem();
-            const lastItem = document.getElementById('items').lastElementChild;
-            const inputs = lastItem.querySelectorAll('input, select');
+            const lastRow = document.getElementById('itemsTableBody').lastElementChild;
+            const inputs = lastRow.querySelectorAll('input, select');
             inputs[0].value = item.name;
             inputs[1].value = item.qty;
             inputs[2].value = item.unit;
@@ -552,7 +586,7 @@ app.get("/", (req, res) => {
             inputs[4].value = item.discount;
           });
           
-          update();
+          updateTotals();
           markFormModified();
         }
 
@@ -563,9 +597,10 @@ app.get("/", (req, res) => {
           
           document.getElementById('form').reset();
           document.getElementById('searchInvoice').value = '';
-          document.getElementById('items').innerHTML = '';
+          document.getElementById('itemsTableBody').innerHTML = '';
           document.getElementById('searchMessage').innerHTML = '';
           clearEditingMode();
+          itemCounter = 0;
           
           const todayIST = new Date().toISOString().split('T')[0];
           document.querySelector('input[name="date"]').value = todayIST;
@@ -573,56 +608,73 @@ app.get("/", (req, res) => {
           
           addItem();
           formModified = false;
+          updateTotals();
         }
 
         function addItem() {
-          const item = document.createElement("div");
-          item.className = "item";
-          item.innerHTML = \`
-            <div class="mobile-label">Item Name</div>
-            <input name="name" placeholder="Item Name" required />
-            
-            <div class="mobile-label">Quantity</div>
-            <input name="qty" type="number" step="0.01" placeholder="Qty" required />
-            
-            <div class="mobile-label">Unit</div>
-            <select name="unit">
-              <option value="BDL">BDL - Bundle</option>
-              <option value="BOX">BOX - Box</option>
-              <option value="BTL">BTL - Bottle</option>
-              <option value="DOZ">DOZ - Dozen</option>
-              <option value="GM">GM - Gram</option>
-              <option value="KG">KG - Kilogram</option>
-              <option value="LTR">LTR - Litre</option>
-              <option value="ML">ML - Millilitre</option>
-              <option value="PCS">PCS - Pieces</option>
-              <option value="PKT">PKT - Packet</option>
-              <option value="TIN">TIN - Tin</option>
-            </select>
-            
-            <div class="mobile-label">Rate</div>
-            <input name="rate" type="number" step="0.01" placeholder="Rate" required />
-            
-            <div class="mobile-label">Discount</div>
-            <input name="discount" type="text" placeholder="0 or 10%" />
-            
-            <div class="mobile-label">Amount</div>
-            <input name="amount" type="text" placeholder="₹0" disabled />
-            
-            <button type="button" class="remove-btn" onclick="removeItem(this)">Remove Item</button>
+          itemCounter++;
+          const tableBody = document.getElementById('itemsTableBody');
+          const row = document.createElement('tr');
+          
+          row.innerHTML = \`
+            <td style="text-align: center; font-weight: bold; background: #f8f9fa;">\${itemCounter}</td>
+            <td><input name="name" placeholder="Enter item description" required /></td>
+            <td><input name="qty" type="number" step="0.01" placeholder="0" required /></td>
+            <td>
+              <select name="unit">
+                <option value="PCS">PCS - Pieces</option>
+                <option value="KG">KG - Kilogram</option>
+                <option value="GM">GM - Gram</option>
+                <option value="LTR">LTR - Litre</option>
+                <option value="ML">ML - Millilitre</option>
+                <option value="DOZ">DOZ - Dozen</option>
+                <option value="BOX">BOX - Box</option>
+                <option value="PKT">PKT - Packet</option>
+                <option value="BTL">BTL - Bottle</option>
+                <option value="TIN">TIN - Tin</option>
+                <option value="BDL">BDL - Bundle</option>
+                <option value="SQM">SQM - Square Meter</option>
+                <option value="MTR">MTR - Meter</option>
+                <option value="SET">SET - Set</option>
+                <option value="UNIT">UNIT - Unit</option>
+              </select>
+            </td>
+            <td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>
+            <td><input name="discount" type="text" placeholder="0 or 10%" /></td>
+            <td><div class="amount-display">₹0.00</div></td>
+            <td style="text-align: center;">
+              <button type="button" class="remove-btn" onclick="removeItem(this)">🗑️ Remove</button>
+            </td>
           \`;
-          document.getElementById("items").appendChild(item);
-          item.querySelectorAll("input, select").forEach(input => {
-            input.addEventListener("input", update);
+          
+          tableBody.appendChild(row);
+          
+          // Add event listeners to the new row inputs
+          row.querySelectorAll("input, select").forEach(input => {
+            input.addEventListener("input", updateTotals);
             input.addEventListener("input", markFormModified);
           });
-          update();
+          
+          updateTotals();
           markFormModified();
         }
 
         function removeItem(btn) {
-          btn.parentElement.remove();
-          update();
+          if (document.getElementById('itemsTableBody').children.length <= 1) {
+            alert('At least one item is required');
+            return;
+          }
+          
+          btn.closest('tr').remove();
+          
+          // Renumber the rows
+          const rows = document.querySelectorAll('#itemsTableBody tr');
+          rows.forEach((row, index) => {
+            row.cells[0].textContent = index + 1;
+          });
+          
+          itemCounter = rows.length;
+          updateTotals();
           markFormModified();
         }
 
@@ -649,10 +701,11 @@ app.get("/", (req, res) => {
           }
         }
 
-        function update() {
+        function updateTotals() {
           let total = 0;
-          document.querySelectorAll(".item").forEach(item => {
-            const inputs = item.querySelectorAll("input, select");
+          
+          document.querySelectorAll("#itemsTableBody tr").forEach(row => {
+            const inputs = row.querySelectorAll("input, select");
             const qty = parseFloat(inputs[1].value) || 0;
             const rate = parseFloat(inputs[3].value) || 0;
             const discount = inputs[4].value || '0';
@@ -661,9 +714,11 @@ app.get("/", (req, res) => {
             const discountAmount = calculateDiscount(grossAmount, discount);
             const netAmount = grossAmount - discountAmount;
             
-            inputs[5].value = "₹" + netAmount.toFixed(2);
+            const amountDisplay = row.querySelector('.amount-display');
+            amountDisplay.textContent = "₹" + netAmount.toFixed(2);
             total += netAmount;
           });
+          
           document.getElementById("total").textContent = total.toFixed(2);
         }
 
@@ -688,8 +743,8 @@ app.get("/", (req, res) => {
             originalInvoiceNo: originalInvoiceNo
           };
 
-          document.querySelectorAll(".item").forEach(item => {
-            const inputs = item.querySelectorAll("input, select");
+          document.querySelectorAll("#itemsTableBody tr").forEach(row => {
+            const inputs = row.querySelectorAll("input, select");
             const name = inputs[0].value;
             const qty = inputs[1].value;
             const unit = inputs[2].value;
@@ -729,7 +784,7 @@ app.get("/", (req, res) => {
               const a = document.createElement("a");
               a.style.display = "none";
               a.href = url;
-              a.download = "invoice_" + data.billto + "_" + data.invoice + ".pdf";
+              a.download = "invoice_" + data.billto.replace(/[^a-zA-Z0-9]/g, '_') + "_" + data.invoice + ".pdf";
               
               if (window.navigator.msSaveOrOpenBlob) {
                 window.navigator.msSaveOrOpenBlob(blob, "invoice_" + data.billto + ".pdf");
@@ -743,9 +798,9 @@ app.get("/", (req, res) => {
               formModified = false;
               
               if (isEditing) {
-                showMessage(\`Invoice \${data.invoice} updated and downloaded successfully!\`, 'success');
+                showMessage(\`✅ Invoice \${data.invoice} updated and downloaded successfully!\`, 'success');
               } else {
-                showMessage(\`Invoice \${data.invoice} saved and downloaded successfully!\`, 'success');
+                showMessage(\`✅ Invoice \${data.invoice} saved and downloaded successfully!\`, 'success');
               }
             })
             .catch(error => {
@@ -758,6 +813,7 @@ app.get("/", (req, res) => {
             });
         });
 
+        // Initialize with one item
         addItem();
       </script>
     </body>
@@ -858,10 +914,10 @@ app.post("/generate", async (req, res) => {
       }
     }
 
-    // Generate PDF with PDFKit - LIGHTWEIGHT & RENDER.COM FRIENDLY
+    // Generate Professional PDF with PDFKit
     const doc = new PDFDocument({ 
       size: 'A4', 
-      margin: 30,
+      margin: 40,
       bufferPages: true 
     });
 
@@ -875,232 +931,421 @@ app.post("/generate", async (req, res) => {
       res.send(pdfData);
     });
 
-    // Helper functions for PDF layout
-    function drawBox(x, y, width, height, fillColor = null) {
-      if (fillColor) {
-        doc.rect(x, y, width, height).fill(fillColor);
-      } else {
-        doc.rect(x, y, width, height).stroke();
-      }
-    }
-
-    function drawText(text, x, y, options = {}) {
-      doc.text(text, x, y, options);
-    }
-
-    // Page dimensions
+    // Page dimensions and settings
     const pageWidth = 595.28;
     const pageHeight = 841.89;
-    const margin = 30;
+    const margin = 40;
     const contentWidth = pageWidth - (margin * 2);
 
     // Colors
-    const headerGray = '#f0f0f0';
-    const borderColor = '#000000';
+    const headerColor = '#2c3e50';
+    const lightGray = '#f8f9fa';
+    const borderColor = '#dee2e6';
+    const primaryColor = '#007bff';
 
-    // Start PDF generation
-    doc.strokeColor(borderColor);
-    doc.fillColor('#000000');
+    // Helper function to draw bordered text box
+    function drawTextBox(x, y, width, height, text, options = {}) {
+      const {
+        fontSize = 10,
+        fontType = 'Helvetica',
+        textAlign = 'left',
+        backgroundColor = null,
+        borderColor = '#000000',
+        padding = 5
+      } = options;
 
-    // Main border
-    drawBox(margin, margin, contentWidth, pageHeight - (margin * 2));
-
-    let currentY = margin + 10;
-
-    // Header Section
-    doc.fontSize(16).font('Helvetica-Bold');
-    drawText('BILL OF SUPPLY', margin + 20, currentY);
-    
-    doc.fontSize(8).font('Helvetica');
-    doc.rect(pageWidth - 150, currentY - 2, 120, 15).fill(headerGray);
-    doc.fillColor('#000000');
-    drawText('ORIGINAL FOR RECIPIENT', pageWidth - 145, currentY + 2);
-    
-    currentY += 25;
-    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
-
-    // Business Info Section
-    currentY += 15;
-    doc.fontSize(14).font('Helvetica-Bold');
-    drawText(BILL_NAME, margin + 20, currentY, { align: 'center', width: contentWidth - 40 });
-    
-    currentY += 20;
-    doc.fontSize(10).font('Helvetica');
-    drawText(BILL_ADDRESS, margin + 20, currentY, { align: 'center', width: contentWidth - 40 });
-    
-    currentY += 15;
-    drawText(`Mobile: ${BILL_PHONE}`, margin + 20, currentY, { align: 'center', width: contentWidth - 40 });
-    
-    currentY += 20;
-    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
-
-    // Invoice Details Section
-    currentY += 15;
-    const detailsHeight = 60;
-    const halfWidth = contentWidth / 2;
-
-    // Bill To section
-    doc.fontSize(10).font('Helvetica-Bold');
-    drawText('BILL TO', margin + 20, currentY);
-    
-    currentY += 15;
-    doc.fontSize(9).font('Helvetica');
-    const billToLines = billto.split('\n');
-    billToLines.forEach((line, index) => {
-      drawText(line, margin + 20, currentY + (index * 12));
-    });
-
-    // Invoice meta section (right side)
-    const metaX = margin + halfWidth + 10;
-    let metaY = currentY - 15;
-    
-    doc.fontSize(9).font('Helvetica-Bold');
-    drawText('Invoice No.', metaX, metaY);
-    drawText('Invoice Date', metaX + 80, metaY);
-    drawText('Due Date', metaX + 160, metaY);
-    
-    metaY += 15;
-    doc.fontSize(9).font('Helvetica');
-    drawText(invoice, metaX, metaY);
-    drawText(new Date(date).toLocaleDateString('en-GB'), metaX + 80, metaY);
-    drawText(new Date(duedate).toLocaleDateString('en-GB'), metaX + 160, metaY);
-
-    // Vertical separator
-    doc.moveTo(margin + halfWidth, currentY - 15).lineTo(margin + halfWidth, currentY + 45).stroke();
-
-    currentY += 60;
-    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
-
-    // Items Table
-    currentY += 10;
-    const tableStartY = currentY;
-    const rowHeight = 20;
-    const headerHeight = 25;
-
-    // Table headers
-    const colWidths = [40, 280, 80, 80, 80]; // S.No, Items, Qty, Rate, Amount
-    const colX = [
-      margin + 10,
-      margin + 50,
-      margin + 330,
-      margin + 410,
-      margin + 490
-    ];
-
-    // Header background
-    doc.rect(margin, currentY, contentWidth, headerHeight).fill(headerGray);
-    doc.fillColor('#000000');
-
-    // Header borders
-    doc.rect(margin, currentY, contentWidth, headerHeight).stroke();
-    for (let i = 1; i < colX.length; i++) {
-      doc.moveTo(colX[i], currentY).lineTo(colX[i], currentY + headerHeight).stroke();
-    }
-
-    doc.fontSize(9).font('Helvetica-Bold');
-    drawText('S.NO', colX[0] + 5, currentY + 8);
-    drawText('ITEMS', colX[1] + 5, currentY + 8);
-    drawText('QTY.', colX[2] + 5, currentY + 8);
-    drawText('RATE', colX[3] + 5, currentY + 8);
-    drawText('AMOUNT', colX[4] + 5, currentY + 8);
-
-    currentY += headerHeight;
-
-    // Table rows
-    doc.fontSize(8).font('Helvetica');
-    
-    // Data rows
-    items.forEach((item, index) => {
-      // Row border
-      doc.rect(margin, currentY, contentWidth, rowHeight).stroke();
-      
-      // Column separators
-      for (let i = 1; i < colX.length; i++) {
-        doc.moveTo(colX[i], currentY).lineTo(colX[i], currentY + rowHeight).stroke();
+      // Draw background if specified
+      if (backgroundColor) {
+        doc.rect(x, y, width, height).fill(backgroundColor);
+        doc.fillColor('#000000'); // Reset to black
       }
 
-      // Row data
-      drawText((index + 1).toString(), colX[0] + 5, currentY + 6);
-      drawText(item.name.substring(0, 35), colX[1] + 5, currentY + 6); // Truncate long names
-      drawText(`${item.qty} ${item.unit}`, colX[2] + 5, currentY + 6);
-      drawText(`₹${item.rate}`, colX[3] + 5, currentY + 6);
-      drawText(`₹${item.amount}`, colX[4] + 5, currentY + 6);
+      // Draw border
+      doc.rect(x, y, width, height).stroke(borderColor);
 
-      currentY += rowHeight;
-    });
-
-    // Empty rows to fill space
-    const minRows = 8;
-    const emptyRows = Math.max(0, minRows - items.length);
-    
-    for (let i = 0; i < emptyRows; i++) {
-      doc.rect(margin, currentY, contentWidth, rowHeight).stroke();
+      // Draw text
+      doc.fontSize(fontSize).font(fontType);
+      const textY = y + (height - fontSize) / 2;
       
-      for (let j = 1; j < colX.length; j++) {
-        doc.moveTo(colX[j], currentY).lineTo(colX[j], currentY + rowHeight).stroke();
+      if (textAlign === 'center') {
+        doc.text(text, x + padding, textY, { 
+          width: width - (padding * 2), 
+          align: 'center'
+        });
+      } else if (textAlign === 'right') {
+        doc.text(text, x + padding, textY, { 
+          width: width - (padding * 2), 
+          align: 'right'
+        });
+      } else {
+        doc.text(text, x + padding, textY);
       }
-      
-      currentY += rowHeight;
     }
 
-    // Total Section
-    const totalHeight = 25;
+    let currentY = margin;
+
+    // HEADER SECTION WITH PROFESSIONAL STYLING
+    // Main title bar
+    drawTextBox(margin, currentY, contentWidth, 35, 'BILL OF SUPPLY', {
+      fontSize: 18,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: headerColor
+    });
     
-    // Total row
-    doc.rect(margin, currentY, contentWidth, totalHeight).stroke();
-    doc.rect(margin, currentY, colWidths[0] + colWidths[1] + colWidths[2], totalHeight).fill(headerGray);
-    doc.fillColor('#000000');
-    
-    doc.fontSize(10).font('Helvetica-Bold');
-    drawText('TOTAL', margin + (contentWidth * 0.6) / 2, currentY + 8, { align: 'center' });
-    drawText(`₹ ${total}`, colX[3] + 5, currentY + 8);
-    drawText(`₹ ${total}`, colX[4] + 5, currentY + 8);
+    // Set text color to white for header
+    doc.fillColor('#ffffff');
+    doc.fontSize(18).font('Helvetica-Bold');
+    doc.text('BILL OF SUPPLY', margin, currentY + 8, {
+      width: contentWidth,
+      align: 'center'
+    });
+    doc.fillColor('#000000'); // Reset to black
 
-    // Column separators for total row
-    doc.moveTo(colX[3], currentY).lineTo(colX[3], currentY + totalHeight).stroke();
-    doc.moveTo(colX[4], currentY).lineTo(colX[4], currentY + totalHeight).stroke();
+    currentY += 35;
 
-    currentY += totalHeight;
-
-    // Received Amount row
-    doc.rect(margin, currentY, contentWidth, totalHeight).stroke();
-    doc.rect(margin, currentY, colWidths[0] + colWidths[1] + colWidths[2], totalHeight).fill(headerGray);
-    doc.fillColor('#000000');
-    
-    drawText('RECEIVED AMOUNT', margin + (contentWidth * 0.6) / 2, currentY + 8, { align: 'center' });
-    drawText(`₹ ${received}`, colX[3] + 5, currentY + 8);
-    drawText(`₹ ${received}`, colX[4] + 5, currentY + 8);
-
-    doc.moveTo(colX[3], currentY).lineTo(colX[3], currentY + totalHeight).stroke();
-    doc.moveTo(colX[4], currentY).lineTo(colX[4], currentY + totalHeight).stroke();
-
-    currentY += totalHeight + 15;
-    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
-
-    // Amount in Words
-    currentY += 15;
-    doc.fontSize(10).font('Helvetica-Bold');
-    drawText('Total Amount (in words)', margin + 20, currentY);
-    
-    currentY += 15;
-    doc.fontSize(9).font('Helvetica');
-    const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees";
-    drawText(totalInWords, margin + 20, currentY);
+    // Document type indicator
+    drawTextBox(pageWidth - 180, currentY, 140, 20, 'ORIGINAL FOR RECIPIENT', {
+      fontSize: 9,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: lightGray
+    });
 
     currentY += 30;
-    doc.moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
 
-    // Terms and Conditions
-    currentY += 15;
-    doc.fontSize(9).font('Helvetica-Bold');
-    drawText('Terms and Conditions', margin + 20, currentY);
+    // BUSINESS INFORMATION SECTION
+    drawTextBox(margin, currentY, contentWidth, 25, BILL_NAME, {
+      fontSize: 16,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: lightGray
+    });
+
+    currentY += 25;
+
+    // Business details
+    const businessInfoHeight = 60;
+    drawTextBox(margin, currentY, contentWidth, businessInfoHeight, '', {
+      backgroundColor: '#ffffff'
+    });
+
+    // Business address and contact
+    doc.fontSize(11).font('Helvetica');
+    let businessY = currentY + 10;
+    doc.text(BILL_ADDRESS, margin + 10, businessY, {
+      width: contentWidth - 20,
+      align: 'center'
+    });
     
-    currentY += 15;
-    doc.fontSize(8).font('Helvetica');
-    drawText('1. Goods once sold will not be taken back or exchanged', margin + 20, currentY);
+    businessY += 20;
+    doc.text(`Mobile: ${BILL_PHONE}`, margin + 10, businessY, {
+      width: contentWidth - 20,
+      align: 'center'
+    });
+
+    currentY += businessInfoHeight + 10;
+
+    // INVOICE DETAILS SECTION
+    const detailsRowHeight = 25;
+    const colWidth = contentWidth / 2;
+
+    // Bill To section (left half)
+    drawTextBox(margin, currentY, colWidth - 5, detailsRowHeight, 'BILL TO', {
+      fontSize: 11,
+      fontType: 'Helvetica-Bold',
+      backgroundColor: headerColor
+    });
     
-    currentY += 12;
-    drawText(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 20, currentY);
+    doc.fillColor('#ffffff');
+    doc.fontSize(11).font('Helvetica-Bold');
+    doc.text('BILL TO', margin + 5, currentY + 6);
+    doc.fillColor('#000000');
+
+    // Invoice meta info (right half)
+    const metaStartX = margin + colWidth + 5;
+    const metaColWidth = (colWidth - 10) / 3;
+
+    drawTextBox(metaStartX, currentY, metaColWidth, detailsRowHeight, 'Invoice No.', {
+      fontSize: 10,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: headerColor
+    });
+
+    drawTextBox(metaStartX + metaColWidth, currentY, metaColWidth, detailsRowHeight, 'Invoice Date', {
+      fontSize: 10,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: headerColor
+    });
+
+    drawTextBox(metaStartX + (metaColWidth * 2), currentY, metaColWidth, detailsRowHeight, 'Due Date', {
+      fontSize: 10,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: headerColor
+    });
+
+    // Header text in white
+    doc.fillColor('#ffffff');
+    doc.fontSize(10).font('Helvetica-Bold');
+    doc.text('Invoice No.', metaStartX, currentY + 7, { width: metaColWidth, align: 'center' });
+    doc.text('Invoice Date', metaStartX + metaColWidth, currentY + 7, { width: metaColWidth, align: 'center' });
+    doc.text('Due Date', metaStartX + (metaColWidth * 2), currentY + 7, { width: metaColWidth, align: 'center' });
+    doc.fillColor('#000000');
+
+    currentY += detailsRowHeight;
+
+    // Customer details and invoice values
+    const customerDetailsHeight = 50;
+    
+    drawTextBox(margin, currentY, colWidth - 5, customerDetailsHeight, '', {
+      backgroundColor: '#ffffff'
+    });
+
+    // Customer info
+    doc.fontSize(10).font('Helvetica');
+    const billToLines = billto.split('\n');
+    let customerY = currentY + 8;
+    billToLines.forEach((line, index) => {
+      if (index < 3) { // Limit to 3 lines
+        doc.text(line.substring(0, 50), margin + 8, customerY + (index * 12));
+      }
+    });
+
+    // Invoice values
+    drawTextBox(metaStartX, currentY, metaColWidth, customerDetailsHeight, invoice, {
+      fontSize: 10,
+      textAlign: 'center'
+    });
+
+    drawTextBox(metaStartX + metaColWidth, currentY, metaColWidth, customerDetailsHeight, 
+      new Date(date).toLocaleDateString('en-GB'), {
+      fontSize: 10,
+      textAlign: 'center'
+    });
+
+    drawTextBox(metaStartX + (metaColWidth * 2), currentY, metaColWidth, customerDetailsHeight, 
+      new Date(duedate).toLocaleDateString('en-GB'), {
+      fontSize: 10,
+      textAlign: 'center'
+    });
+
+    currentY += customerDetailsHeight + 15;
+
+    // PROFESSIONAL ITEMS TABLE
+    const tableStartY = currentY;
+    const rowHeight = 25;
+    const headerRowHeight = 30;
+
+    // Table column definitions with better spacing
+    const tableColumns = [
+      { header: 'S.No', width: 40, align: 'center' },
+      { header: 'Item Description', width: 180, align: 'left' },
+      { header: 'Qty', width: 50, align: 'center' },
+      { header: 'Unit', width: 50, align: 'center' },
+      { header: 'Rate (₹)', width: 70, align: 'right' },
+      { header: 'Discount', width: 70, align: 'center' },
+      { header: 'Amount (₹)', width: 85, align: 'right' }
+    ];
+
+    let tableX = margin;
+
+    // Table headers with professional styling
+    tableColumns.forEach(col => {
+      drawTextBox(tableX, currentY, col.width, headerRowHeight, col.header, {
+        fontSize: 10,
+        fontType: 'Helvetica-Bold',
+        textAlign: col.align,
+        backgroundColor: headerColor
+      });
+      
+      // White text for headers
+      doc.fillColor('#ffffff');
+      doc.fontSize(10).font('Helvetica-Bold');
+      const textY = currentY + (headerRowHeight - 10) / 2;
+      if (col.align === 'center') {
+        doc.text(col.header, tableX + 2, textY, { width: col.width - 4, align: 'center' });
+      } else if (col.align === 'right') {
+        doc.text(col.header, tableX + 2, textY, { width: col.width - 4, align: 'right' });
+      } else {
+        doc.text(col.header, tableX + 5, textY);
+      }
+      doc.fillColor('#000000');
+      
+      tableX += col.width;
+    });
+
+    currentY += headerRowHeight;
+
+    // Table data rows with alternating colors
+    items.forEach((item, index) => {
+      const isEvenRow = index % 2 === 0;
+      const rowBgColor = isEvenRow ? '#ffffff' : lightGray;
+      
+      tableX = margin;
+      
+      // Row data
+      const rowData = [
+        (index + 1).toString(),
+        item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name,
+        item.qty.toString(),
+        item.unit,
+        parseFloat(item.rate).toFixed(2),
+        item.discount || '0',
+        parseFloat(item.amount).toFixed(2)
+      ];
+
+      tableColumns.forEach((col, colIndex) => {
+        drawTextBox(tableX, currentY, col.width, rowHeight, rowData[colIndex], {
+          fontSize: 9,
+          textAlign: col.align,
+          backgroundColor: rowBgColor
+        });
+        tableX += col.width;
+      });
+
+      currentY += rowHeight;
+    });
+
+    // Add empty rows for professional appearance
+    const minRows = 8;
+    const emptyRowsNeeded = Math.max(0, minRows - items.length);
+    
+    for (let i = 0; i < emptyRowsNeeded; i++) {
+      const isEvenRow = (items.length + i) % 2 === 0;
+      const rowBgColor = isEvenRow ? '#ffffff' : lightGray;
+      
+      tableX = margin;
+      tableColumns.forEach(col => {
+        drawTextBox(tableX, currentY, col.width, rowHeight, '', {
+          backgroundColor: rowBgColor
+        });
+        tableX += col.width;
+      });
+      currentY += rowHeight;
+    }
+
+    // TOTALS SECTION with enhanced styling
+    const totalRowHeight = 28;
+    
+    // Total row
+    tableX = margin;
+    const totalLabelWidth = tableColumns.slice(0, 5).reduce((sum, col) => sum + col.width, 0);
+    
+    drawTextBox(tableX, currentY, totalLabelWidth, totalRowHeight, 'TOTAL AMOUNT', {
+      fontSize: 12,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: primaryColor
+    });
+
+    doc.fillColor('#ffffff');
+    doc.fontSize(12).font('Helvetica-Bold');
+    doc.text('TOTAL AMOUNT', tableX, currentY + 8, { width: totalLabelWidth, align: 'center' });
+    doc.fillColor('#000000');
+
+    tableX += totalLabelWidth;
+
+    drawTextBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '---', {
+      fontSize: 11,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: lightGray
+    });
+
+    tableX += tableColumns[5].width;
+
+    drawTextBox(tableX, currentY, tableColumns[6].width, totalRowHeight, `₹ ${parseFloat(total).toFixed(2)}`, {
+      fontSize: 12,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'right',
+      backgroundColor: '#d4edda'
+    });
+
+    currentY += totalRowHeight;
+
+    // Received amount row
+    tableX = margin;
+    
+    drawTextBox(tableX, currentY, totalLabelWidth, totalRowHeight, 'RECEIVED AMOUNT', {
+      fontSize: 11,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'center',
+      backgroundColor: '#6c757d'
+    });
+
+    doc.fillColor('#ffffff');
+    doc.fontSize(11).font('Helvetica-Bold');
+    doc.text('RECEIVED AMOUNT', tableX, currentY + 8, { width: totalLabelWidth, align: 'center' });
+    doc.fillColor('#000000');
+
+    tableX += totalLabelWidth;
+
+    drawTextBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '---', {
+      fontSize: 11,
+      textAlign: 'center',
+      backgroundColor: lightGray
+    });
+
+    tableX += tableColumns[5].width;
+
+    drawTextBox(tableX, currentY, tableColumns[6].width, totalRowHeight, `₹ ${parseFloat(received).toFixed(2)}`, {
+      fontSize: 11,
+      fontType: 'Helvetica-Bold',
+      textAlign: 'right',
+      backgroundColor: '#fff3cd'
+    });
+
+    currentY += totalRowHeight + 20;
+
+    // AMOUNT IN WORDS SECTION
+    drawTextBox(margin, currentY, contentWidth, 25, 'Amount in Words', {
+      fontSize: 11,
+      fontType: 'Helvetica-Bold',
+      backgroundColor: lightGray
+    });
+
+    currentY += 25;
+
+    const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees Only";
+    drawTextBox(margin, currentY, contentWidth, 30, totalInWords, {
+      fontSize: 10,
+      fontType: 'Helvetica-Bold'
+    });
+
+    currentY += 40;
+
+    // TERMS AND CONDITIONS SECTION
+    drawTextBox(margin, currentY, contentWidth, 25, 'Terms and Conditions', {
+      fontSize: 12,
+      fontType: 'Helvetica-Bold',
+      backgroundColor: lightGray
+    });
+
+    currentY += 25;
+
+    const termsHeight = 50;
+    drawTextBox(margin, currentY, contentWidth, termsHeight, '');
+
+    doc.fontSize(9).font('Helvetica');
+    doc.text('1. Goods once sold will not be taken back or exchanged', margin + 10, currentY + 8);
+    doc.text(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 10, currentY + 22);
+    doc.text('3. Payment terms: As per agreement', margin + 10, currentY + 36);
+
+    // SIGNATURE SECTION
+    currentY += termsHeight + 20;
+    if (currentY < pageHeight - 80) {
+      const signatureWidth = contentWidth / 2;
+      
+      // Authorized Signatory
+      drawTextBox(margin + signatureWidth, currentY, signatureWidth, 60, '');
+      
+      doc.fontSize(10).font('Helvetica');
+      doc.text('For ' + BILL_NAME, margin + signatureWidth + 10, currentY + 10);
+      doc.text('Authorized Signatory', margin + signatureWidth + 10, currentY + 40);
+    }
 
     // Finalize PDF
     doc.end();
@@ -1155,4 +1400,4 @@ app.delete("/api/invoice/:invoiceNo", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log("✅ Render.com Optimized Invoice app running on port", PORT));
+app.listen(PORT, () => console.log("✅ Professional Invoice Generator running on port", PORT));
