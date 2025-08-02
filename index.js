@@ -506,9 +506,9 @@ app.get("/", (req, res) => {
                   <th style="width: 250px;">Item/Service Description</th>
                   <th style="width: 80px;">Quantity</th>
                   <th style="width: 80px;">Unit</th>
-                  <th style="width: 90px;">Rate (₹)</th>
+                  <th style="width: 90px;">Rate</th>
                   <th style="width: 90px;">Discount</th>
-                  <th style="width: 100px;">Amount (₹)</th>
+                  <th style="width: 100px;">Amount</th>
                   <th style="width: 80px;">Action</th>
                 </tr>
               </thead>
@@ -519,7 +519,7 @@ app.get("/", (req, res) => {
           </div>
           
           <div class="form-section">
-            <div class="total-display">💰 Total Amount: ₹<span id="total">0.00</span></div>
+            <div class="total-display">💰 Total Amount: <span id="total">0.00</span></div>
           </div>
           
           <button type="submit" id="submitBtn">💾 Save & Download PDF</button>
@@ -664,7 +664,7 @@ app.get("/", (req, res) => {
             </td>
             <td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>
             <td><input name="discount" type="text" placeholder="0 or 10%" /></td>
-            <td><div class="amount-display">₹0.00</div></td>
+            <td><div class="amount-display">0.00</div></td>
             <td style="text-align: center;">
               <button type="button" class="remove-btn" onclick="removeItem(this)">🗑️ Remove</button>
             </td>
@@ -720,7 +720,7 @@ app.get("/", (req, res) => {
           if (discount.endsWith('%')) {
             return discount;
           } else {
-            return '₹' + discount;
+            return discount;
           }
         }
 
@@ -738,7 +738,7 @@ app.get("/", (req, res) => {
             const netAmount = grossAmount - discountAmount;
             
             const amountDisplay = row.querySelector('.amount-display');
-            amountDisplay.textContent = "₹" + netAmount.toFixed(2);
+            amountDisplay.textContent = netAmount.toFixed(2);
             total += netAmount;
           });
           
@@ -1083,9 +1083,9 @@ app.post("/generate", async (req, res) => {
       { header: 'Item Description', width: 180, align: 'left' },
       { header: 'Qty', width: 50, align: 'right' },
       { header: 'Unit', width: 50, align: 'center' },
-      { header: 'Rate (₹)', width: 70, align: 'right' },
+      { header: 'Rate', width: 70, align: 'right' },
       { header: 'Discount', width: 70, align: 'center' },
-      { header: 'Amount (₹)', width: 85, align: 'right' }
+      { header: 'Amount', width: 85, align: 'right' }
     ];
 
     let tableX = margin;
@@ -1179,7 +1179,7 @@ app.post("/generate", async (req, res) => {
 
     drawBox(tableX, currentY, tableColumns[6].width, totalRowHeight, '#f8f9fa');
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text(`₹ ${parseFloat(total).toFixed(2)}`, tableX + 2, currentY + 8, { width: tableColumns[6].width - 4, align: 'right' });
+    doc.text(`${parseFloat(total).toFixed(2)}`, tableX + 2, currentY + 8, { width: tableColumns[6].width - 4, align: 'right' });
 
     currentY += totalRowHeight + 20;
 
@@ -1221,7 +1221,7 @@ app.post("/generate", async (req, res) => {
       drawBox(margin + signatureWidth, currentY, signatureWidth, 60);
       
       doc.fontSize(10).font('Helvetica');
-      doc.text('For ' + BILL_NAME, margin + signatureWidth + 10, currentY + 10);
+      doc.text(margin + signatureWidth + 10, currentY + 10);
       doc.text('Authorized Signatory', margin + signatureWidth + 10, currentY + 40);
     }
 
