@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const pdf = require("html-pdf");
+const puppeteer = require("puppeteer");
 const mongoose = require("mongoose");
 
 const app = express();
@@ -24,11 +24,9 @@ const connectMongoDB = async () => {
   if (MONGODB_URI && MONGODB_URI !== "mongodb://localhost:27017/invoice_db") {
     try {
       await mongoose.connect(MONGODB_URI, {
-        // Modern Mongoose 6+ compatible options
-        serverSelectionTimeoutMS: isRenderEnvironment ? 10000 : 5000, // Longer timeout for Render
+        serverSelectionTimeoutMS: isRenderEnvironment ? 10000 : 5000,
         socketTimeoutMS: 45000,
         maxPoolSize: 10,
-        // Render-specific optimizations
         retryWrites: true,
         writeConcern: {
           w: 'majority'
@@ -80,7 +78,7 @@ app.use(bodyParser.json());
 // Get today's date in IST
 function getTodayIST() {
   const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+  const istOffset = 5.5 * 60 * 60 * 1000;
   const istTime = new Date(now.getTime() + istOffset);
   return istTime.toISOString().split('T')[0];
 }
@@ -200,14 +198,14 @@ app.get("/", (req, res) => {
           width: auto !important;
           margin: 8px 0 !important;
           align-self: end;
-          justify-self: center; /* Center the button in its grid cell */
+          justify-self: center;
         }
         
         /* Add this new rule for desktop layout */
         @media (min-width: 769px) {
           .item .remove-btn {
-            grid-column: 7; /* Force the button to be in the 7th column */
-            margin-top: auto !important; /* Align with bottom of other elements */
+            grid-column: 7;
+            margin-top: auto !important;
             margin-bottom: auto !important;
           }
         }
@@ -223,7 +221,7 @@ app.get("/", (req, res) => {
           }
           
           .item-header {
-            display: grid !important; /* FIXED: Show headers on mobile with better styling */
+            display: grid !important;
             grid-template-columns: 1fr;
             gap: 0;
             margin-bottom: 12px;
@@ -237,7 +235,7 @@ app.get("/", (req, res) => {
           }
           
           .item-header div {
-            display: none; /* Hide individual header cells on mobile */
+            display: none;
           }
           
           .item-header::before {
@@ -845,7 +843,6 @@ app.post("/generate", async (req, res) => {
         };
 
         if (isEditing && originalInvoiceNo) {
-          // Update existing invoice
           const updatedInvoice = await Invoice.findOneAndUpdate(
             { invoiceNo: originalInvoiceNo },
             invoiceData,
@@ -857,7 +854,6 @@ app.post("/generate", async (req, res) => {
             await newInvoice.save();
           }
         } else {
-          // Create new invoice
           try {
             const newInvoice = new Invoice(invoiceData);
             await newInvoice.save();
@@ -874,29 +870,29 @@ app.post("/generate", async (req, res) => {
       }
     }
 
-    // Generate PDF with ULTRA COMPACT LAYOUT
+    // Generate PDF with Puppeteer - OPTIMIZED FOR SINGLE PAGE
     const rows = items.map(
       (item, i) =>
         `<tr>
-          <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 8px; height: 15px;">${i + 1}</td>
-          <td style="border: 1px solid #000; padding: 2px; font-size: 8px; text-align: left;">${item.name}</td>
-          <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 8px;">${item.qty} ${item.unit}</td>
-          <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 8px;">₹${item.rate}</td>
-          <td style="border: 1px solid #000; padding: 2px; text-align: right; font-size: 8px;">₹${item.amount}</td>
+          <td>${i + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.qty} ${item.unit}</td>
+          <td>₹${item.rate}</td>
+          <td>₹${item.amount}</td>
         </tr>`
     ).join("");
 
-    // Create minimal empty rows - ULTRA COMPACT
-    const minRows = Math.max(4, items.length);
+    // Calculate minimum rows needed (ensure at least 8 rows for proper spacing)
+    const minRows = Math.max(8, items.length);
     const emptyRowsCount = minRows - items.length;
     
     const emptyRows = Array(emptyRowsCount).fill().map(() => 
-      `<tr>
-        <td style="border: 1px solid #000; padding: 2px; height: 15px;"></td>
-        <td style="border: 1px solid #000; padding: 2px;"></td>
-        <td style="border: 1px solid #000; padding: 2px;"></td>
-        <td style="border: 1px solid #000; padding: 2px;"></td>
-        <td style="border: 1px solid #000; padding: 2px;"></td>
+      `<tr class="empty-row">
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
       </tr>`
     ).join('');
 
@@ -917,147 +913,272 @@ app.post("/generate", async (req, res) => {
         padding: 0; 
       }
       
-      @page {
-        size: A4;
-        margin: 5mm;
-      }
-      
       body { 
         font-family: Arial, sans-serif;
-        font-size: 9px;
-        line-height: 1.0;
+        font-size: 10px;
+        line-height: 1.2;
         color: #000;
-        width: 100%;
-        height: 287mm;
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 8mm;
         overflow: hidden;
+        background: white;
       }
       
       .invoice-container {
         width: 100%;
-        border: 1px solid #000;
-        height: 287mm;
-        overflow: hidden;
-        position: relative;
+        height: 100%;
+        border: 2px solid #000;
+        display: flex;
+        flex-direction: column;
       }
       
-      .section {
-        width: 100%;
-        overflow: hidden;
-      }
-      
-      .header-section {
-        padding: 4px 8px;
+      /* Header Section - Fixed height */
+      .header {
+        padding: 8px 12px;
         border-bottom: 1px solid #000;
-        height: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 35px;
+        flex-shrink: 0;
       }
       
+      .header h1 {
+        font-size: 14px;
+        font-weight: bold;
+        margin: 0;
+      }
+      
+      .original-tag {
+        border: 1px solid #000;
+        padding: 3px 6px;
+        font-size: 8px;
+        background: #f0f0f0;
+      }
+      
+      /* Business Info - Fixed height */
       .business-info {
         text-align: center;
-        padding: 6px;
+        padding: 10px;
         border-bottom: 1px solid #000;
-        height: 45px;
+        height: 55px;
+        flex-shrink: 0;
       }
       
+      .business-name {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      
+      .business-details {
+        font-size: 9px;
+        line-height: 1.3;
+      }
+      
+      /* Invoice Details - Fixed height */
       .invoice-details {
-        display: table;
-        width: 100%;
+        display: flex;
         border-bottom: 1px solid #000;
-        height: 50px;
-      }
-      
-      .bill-to, .invoice-meta {
-        display: table-cell;
-        vertical-align: top;
-        padding: 6px;
-        width: 50%;
+        height: 65px;
+        flex-shrink: 0;
       }
       
       .bill-to {
+        flex: 1;
+        padding: 8px 12px;
         border-right: 1px solid #000;
       }
       
-      .items-wrapper {
-        height: 130px;
-        overflow: hidden;
+      .invoice-meta {
+        flex: 1;
+        padding: 8px 12px;
+      }
+      
+      .section-title {
+        font-weight: bold;
+        font-size: 9px;
+        margin-bottom: 4px;
+      }
+      
+      .meta-table {
+        width: 100%;
+        font-size: 8px;
+        border-collapse: collapse;
+      }
+      
+      .meta-table th {
+        font-weight: bold;
+        padding: 2px 4px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      
+      .meta-table td {
+        padding: 2px 4px;
+        font-weight: normal;
+      }
+      
+      /* Items Section - Flexible */
+      .items-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
       }
       
       .items-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 8px;
+        font-size: 9px;
+        height: 100%;
       }
       
-      .footer-wrapper {
-        height: 37mm;
-        overflow: hidden;
+      .items-table th {
+        background-color: #f0f0f0;
+        border: 1px solid #000;
+        padding: 6px 4px;
+        font-weight: bold;
+        text-align: center;
+        height: 25px;
+      }
+      
+      .items-table td {
+        border: 1px solid #000;
+        padding: 4px 6px;
+        text-align: center;
+        height: 20px;
+        vertical-align: middle;
+      }
+      
+      .items-table td:nth-child(2) {
+        text-align: left;
+        max-width: 120px;
+        word-wrap: break-word;
+      }
+      
+      .items-table td:nth-child(4),
+      .items-table td:nth-child(5) {
+        text-align: right;
+      }
+      
+      .empty-row td {
+        height: 18px;
+        border-bottom: 1px solid #ddd;
+      }
+      
+      /* Total Section - Fixed height */
+      .total-section {
+        border-top: 2px solid #000;
+        flex-shrink: 0;
+      }
+      
+      .total-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+      }
+      
+      .total-table td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        height: 25px;
+      }
+      
+      .total-label {
+        background: #f0f0f0;
+        font-weight: bold;
+        text-align: center;
+        width: 60%;
+      }
+      
+      .total-amount {
+        text-align: right;
+        font-weight: bold;
+        width: 20%;
+      }
+      
+      /* Footer - Fixed height */
+      .footer {
+        border-top: 1px solid #000;
+        padding: 8px 12px;
+        height: 65px;
+        flex-shrink: 0;
       }
       
       .amount-words {
-        padding: 4px 6px;
-        border-top: 1px solid #000;
-        border-bottom: 1px solid #000;
-        height: 20mm;
+        margin-bottom: 8px;
       }
       
       .terms {
-        padding: 4px 6px;
-        height: 17mm;
+        font-size: 8px;
+        line-height: 1.3;
       }
+      
+      .terms-title {
+        font-weight: bold;
+        margin-bottom: 3px;
+      }
+      
+      /* Column widths */
+      .col-sno { width: 8%; }
+      .col-item { width: 45%; }
+      .col-qty { width: 15%; }
+      .col-rate { width: 16%; }
+      .col-amount { width: 16%; }
     </style>
 </head>
 <body>
 <div class="invoice-container">
   <!-- Header -->
-  <div class="section header-section">
-    <table style="width: 100%; height: 100%;">
-      <tr>
-        <td style="font-weight: bold; font-size: 12px; vertical-align: middle;">BILL OF SUPPLY</td>
-        <td style="text-align: right; vertical-align: middle;">
-          <span style="border: 1px solid #000; padding: 2px 4px; font-size: 7px; background: #f0f0f0;">ORIGINAL FOR RECIPIENT</span>
-        </td>
-      </tr>
-    </table>
+  <div class="header">
+    <h1>BILL OF SUPPLY</h1>
+    <div class="original-tag">ORIGINAL FOR RECIPIENT</div>
   </div>
 
   <!-- Business Info -->
-  <div class="section business-info">
-    <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">${BILL_NAME}</div>
-    <div style="font-size: 9px; margin-bottom: 1px;">${BILL_ADDRESS}</div>
-    <div style="font-size: 9px;">Mobile: ${BILL_PHONE}</div>
+  <div class="business-info">
+    <div class="business-name">${BILL_NAME}</div>
+    <div class="business-details">
+      ${BILL_ADDRESS}<br>
+      Mobile: ${BILL_PHONE}
+    </div>
   </div>
   
   <!-- Invoice Details -->
-  <div class="section invoice-details">
+  <div class="invoice-details">
     <div class="bill-to">
-      <div style="font-weight: bold; font-size: 9px; margin-bottom: 3px;">BILL TO</div>
-      <div style="font-size: 8px; line-height: 1.1;">${billto}</div>
+      <div class="section-title">BILL TO</div>
+      <div style="font-size: 9px; line-height: 1.3;">${billto}</div>
     </div>
     <div class="invoice-meta">
-      <table style="width: 100%; font-size: 8px;">
+      <table class="meta-table">
         <tr>
-          <td style="font-weight: bold; padding: 1px;">Invoice No.</td>
-          <td style="font-weight: bold; padding: 1px;">Invoice Date</td>
-          <td style="font-weight: bold; padding: 1px;">Due Date</td>
+          <th>Invoice No.</th>
+          <th>Invoice Date</th>
+          <th>Due Date</th>
         </tr>
         <tr>
-          <td style="padding: 1px; font-size: 9px;">${invoice}</td>
-          <td style="padding: 1px; font-size: 9px;">${invoiceDate}</td>
-          <td style="padding: 1px; font-size: 9px;">${dueDateFormatted}</td>
+          <td>${invoice}</td>
+          <td>${invoiceDate}</td>
+          <td>${dueDateFormatted}</td>
         </tr>
       </table>
     </div>
   </div>
   
   <!-- Items Section -->
-  <div class="section items-wrapper">
+  <div class="items-section">
     <table class="items-table">
       <thead>
-        <tr style="background-color: #f0f0f0;">
-          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 8%;">S.NO</th>
-          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 48%;">ITEMS</th>
-          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 16%;">QTY.</th>
-          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 14%;">RATE</th>
-          <th style="border: 1px solid #000; padding: 3px; font-size: 8px; width: 14%;">AMOUNT</th>
+        <tr>
+          <th class="col-sno">S.NO</th>
+          <th class="col-item">ITEMS</th>
+          <th class="col-qty">QTY.</th>
+          <th class="col-rate">RATE</th>
+          <th class="col-amount">AMOUNT</th>
         </tr>
       </thead>
       <tbody>
@@ -1065,85 +1186,89 @@ app.post("/generate", async (req, res) => {
         ${emptyRows}
       </tbody>
     </table>
-    
-    <!-- Total Section -->
-    <table style="width: 100%; border-collapse: collapse;">
+  </div>
+  
+  <!-- Total Section -->
+  <div class="total-section">
+    <table class="total-table">
       <tr>
-        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background: #f0f0f0; font-size: 9px; width: 72%;">TOTAL</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px; width: 14%;">₹ ${total}</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px; width: 14%;">₹ ${total}</td>
+        <td class="total-label">TOTAL</td>
+        <td class="total-amount">₹ ${total}</td>
+        <td class="total-amount">₹ ${total}</td>
       </tr>
       <tr>
-        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background: #f0f0f0; font-size: 9px;">RECEIVED AMOUNT</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px;">₹ ${received}</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; font-size: 9px;">₹ ${received}</td>
+        <td class="total-label">RECEIVED AMOUNT</td>
+        <td class="total-amount">₹ ${received}</td>
+        <td class="total-amount">₹ ${received}</td>
       </tr>
     </table>
   </div>
   
   <!-- Footer -->
-  <div class="section footer-wrapper">
+  <div class="footer">
     <div class="amount-words">
       <div style="font-weight: bold; font-size: 9px; margin-bottom: 2px;">Total Amount (in words)</div>
-      <div style="font-size: 8px; line-height: 1.1;">${totalInWords}</div>
+      <div style="font-size: 9px;">${totalInWords}</div>
     </div>
     
     <div class="terms">
-      <div style="font-weight: bold; font-size: 8px; margin-bottom: 3px;">Terms and Conditions</div>
-      <div style="font-size: 7px; line-height: 1.2;">1. Goods once sold will not be taken back or exchanged</div>
-      <div style="font-size: 7px; line-height: 1.2;">2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
+      <div class="terms-title">Terms and Conditions</div>
+      <div>1. Goods once sold will not be taken back or exchanged</div>
+      <div>2. All disputes are subject to ${BILL_CITY} jurisdiction only</div>
     </div>
   </div>
 </div>
 </body>
 </html>`;
 
-    pdf.create(html, {
-      format: 'A4',
-      orientation: 'portrait',
-      border: {
-        top: '3mm',
-        right: '3mm', 
-        bottom: '3mm',
-        left: '3mm'
-      },
-      header: {
-        height: '0mm'
-      },
-      footer: {
-        height: '0mm'
-      },
-      type: 'pdf',
-      quality: '100',
-      timeout: 30000,
-      childProcessOptions: {
-        env: {
-          OPENSSL_CONF: '/dev/null',
+    // Use Puppeteer for PDF generation (works great on Render.com)
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process', // Important for Render.com
+          '--disable-gpu'
+        ]
+      });
+
+      const page = await browser.newPage();
+      
+      // Set viewport and content
+      await page.setViewport({ width: 794, height: 1123 }); // A4 dimensions
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+
+      // Generate PDF with precise settings for single page
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '5mm',
+          right: '5mm',
+          bottom: '5mm',
+          left: '5mm'
         },
-      },
-      phantomPath: undefined,
-      httpHeaders: {},
-      localUrlAccess: false,
-      allowLocalFilesAccess: false,
-      // ULTRA COMPACT SETTINGS for single page
-      zoomFactor: 0.75, // Maximum zoom reduction
-      dpi: 64, // Lower DPI for maximum compression
-      renderDelay: 300,
-      // Force exact dimensions
-      height: '297mm',
-      width: '210mm',
-      // Additional compression options
-      base: null,
-      paginationOffset: 0
-    }).toStream((err, stream) => {
-      if (err) {
-        console.error("PDF generation error:", err);
-        return res.status(500).json({ success: false, message: "PDF generation error" });
-      }
+        preferCSSPageSize: true
+      });
+
+      await browser.close();
+
+      // Send PDF response
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", 'attachment; filename="invoice_' + billto + '_' + invoice + '.pdf"');
-      stream.pipe(res);
-    });
+      res.setHeader("Content-Disposition", 'attachment; filename="invoice_' + billto.replace(/[^a-zA-Z0-9]/g, '_') + '_' + invoice + '.pdf"');
+      res.send(pdfBuffer);
+
+    } catch (pdfError) {
+      if (browser) await browser.close();
+      console.error("PDF generation error:", pdfError);
+      return res.status(500).json({ success: false, message: "PDF generation failed: " + pdfError.message });
+    }
 
   } catch (error) {
     console.error("Error generating invoice:", error);
@@ -1195,4 +1320,4 @@ app.delete("/api/invoice/:invoiceNo", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log("✅ Enhanced Invoice app with MongoDB running on port", PORT));
+app.listen(PORT, () => console.log("✅ Enhanced Invoice app with Puppeteer running on port", PORT));
