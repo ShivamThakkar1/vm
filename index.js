@@ -24,15 +24,15 @@ const connectMongoDB = async () => {
   if (MONGODB_URI && MONGODB_URI !== "mongodb://localhost:27017/invoice_db") {
     try {
       await mongoose.connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
+        // Modern Mongoose 6+ compatible options
         serverSelectionTimeoutMS: isRenderEnvironment ? 10000 : 5000, // Longer timeout for Render
         socketTimeoutMS: 45000,
-        bufferMaxEntries: 0,
         maxPoolSize: 10,
         // Render-specific optimizations
         retryWrites: true,
-        w: 'majority'
+        writeConcern: {
+          w: 'majority'
+        }
       });
       console.log("✅ Connected to MongoDB - Database features enabled");
       isMongoConnected = true;
