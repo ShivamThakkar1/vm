@@ -1234,11 +1234,12 @@ app.post("/generate", async (req, res) => {
 
     currentY += 35;
 
-    // Document type indicator - Centered
-    drawBox(margin + (contentWidth - 140) / 2, currentY, 140, 20);
+    // Document type indicator - Centered and properly sized
+    const recipientBoxWidth = 180;
+    drawBox(margin + (contentWidth - recipientBoxWidth) / 2, currentY, recipientBoxWidth, 20);
     doc.fontSize(9).font('Helvetica-Bold');
-    doc.text('ORIGINAL FOR RECIPIENT', margin + (contentWidth - 140) / 2, currentY + 6, {
-      width: 140,
+    doc.text('ORIGINAL FOR RECIPIENT', margin + (contentWidth - recipientBoxWidth) / 2 + 5, currentY + 6, {
+      width: recipientBoxWidth - 10,
       align: 'center'
     });
 
@@ -1326,20 +1327,24 @@ app.post("/generate", async (req, res) => {
 
     currentY += customerDetailsHeight + 15;
 
-    // CLEAN ITEMS TABLE - WITHOUT DISCOUNT COLUMN
+    // CLEAN ITEMS TABLE - Fixed column widths to fit properly
     const tableStartY = currentY;
     const rowHeight = 25;
     const headerRowHeight = 30;
 
-    // Table column definitions without discount column
+    // Table column definitions - properly sized to fit within page margins
     const tableColumns = [
-      { header: 'S.No', width: 50, align: 'center' },
-      { header: 'Item Description', width: 240, align: 'left' },
-      { header: 'Qty', width: 70, align: 'center' },
-      { header: 'Unit', width: 70, align: 'center' },
-      { header: 'Rate', width: 80, align: 'center' },
+      { header: 'S.No', width: 40, align: 'center' },
+      { header: 'Item Description', width: 200, align: 'left' },
+      { header: 'Qty', width: 50, align: 'center' },
+      { header: 'Unit', width: 50, align: 'center' },
+      { header: 'Rate', width: 70, align: 'center' },
       { header: 'Amount', width: 105, align: 'center' }
     ];
+
+    // Ensure total table width doesn't exceed content width
+    const totalTableWidth = tableColumns.reduce((sum, col) => sum + col.width, 0);
+    console.log('Total table width:', totalTableWidth, 'Content width:', contentWidth);
 
     let tableX = margin;
 
@@ -1356,14 +1361,15 @@ app.post("/generate", async (req, res) => {
 
     currentY += headerRowHeight;
 
-    // Table data rows
+    // Table data rows - with better text handling
     items.forEach((item, index) => {
       tableX = margin;
       
-      // Row data without discount
+      // Row data without discount - with proper text truncation
+      const itemName = item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name;
       const rowData = [
         (index + 1).toString(),
-        item.name.length > 30 ? item.name.substring(0, 30) + '...' : item.name,
+        itemName,
         parseFloat(item.qty).toFixed(2),
         item.unit,
         parseFloat(item.rate).toFixed(2),
@@ -1376,8 +1382,13 @@ app.post("/generate", async (req, res) => {
         doc.fontSize(9).font('Helvetica');
         const textY = currentY + 8;
         
-        // Center all content in PDF
-        doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'center' });
+        if (colIndex === 1) {
+          // Left align item description
+          doc.text(rowData[colIndex], tableX + 5, textY, { width: col.width - 10, align: 'left' });
+        } else {
+          // Center align all other columns
+          doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'center' });
+        }
         
         tableX += col.width;
       });
@@ -1398,10 +1409,10 @@ app.post("/generate", async (req, res) => {
       currentY += rowHeight;
     }
 
-    // TOTAL SECTION - Simplified without discount column
+    // TOTAL SECTION - Fixed to align properly with table
     const totalRowHeight = 28;
     
-    // Total row
+    // Total row - properly aligned with table columns
     tableX = margin;
     const totalLabelWidth = tableColumns.slice(0, 4).reduce((sum, col) => sum + col.width, 0);
     
@@ -1411,15 +1422,17 @@ app.post("/generate", async (req, res) => {
 
     tableX += totalLabelWidth;
 
+    // Rate column with dashes
     drawBox(tableX, currentY, tableColumns[4].width, totalRowHeight);
     doc.fontSize(11).font('Helvetica-Bold');
     doc.text('---', tableX + 2, currentY + 8, { width: tableColumns[4].width - 4, align: 'center' });
 
     tableX += tableColumns[4].width;
 
+    // Amount column with total
     drawBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '#f8f9fa');
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text(`${parseFloat(total).toFixed(2)}`, tableX + 2, currentY + 8, { width: tableColumns[5].width - 4, align: 'center' });
+    doc.text(parseFloat(total).toFixed(2), tableX + 2, currentY + 8, { width: tableColumns[5].width - 4, align: 'center' });
 
     currentY += totalRowHeight + 20;
 
