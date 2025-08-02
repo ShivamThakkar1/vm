@@ -208,7 +208,7 @@ app.get("/", (req, res) => {
           }
         }
         
-        /* Professional Item Table */
+        /* Professional Item Table - Mobile Responsive */
         .items-container {
           background: white;
           border-radius: 15px;
@@ -218,6 +218,7 @@ app.get("/", (req, res) => {
           overflow-x: auto;
         }
         
+        /* Desktop Table View */
         .item-table {
           width: 100%;
           border-collapse: collapse;
@@ -275,6 +276,110 @@ app.get("/", (req, res) => {
           border-radius: 4px;
         }
         
+        /* Mobile Card View */
+        .mobile-items-container {
+          display: none;
+        }
+        
+        .item-card {
+          background: white;
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          position: relative;
+        }
+        
+        .item-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #e9ecef;
+        }
+        
+        .item-number {
+          background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+          color: white;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 14px;
+        }
+        
+        .mobile-remove-btn {
+          background: #dc3545 !important;
+          color: white !important;
+          border: none !important;
+          padding: 8px 15px !important;
+          cursor: pointer !important;
+          border-radius: 6px !important;
+          font-size: 12px !important;
+          width: auto !important;
+          margin: 0 !important;
+          font-weight: 600;
+          transition: all 0.3s ease;
+        }
+        
+        .mobile-remove-btn:hover {
+          background: #c82333 !important;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .item-field {
+          margin-bottom: 15px;
+        }
+        
+        .item-field label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 600;
+          color: #495057;
+          font-size: 14px;
+        }
+        
+        .item-field input,
+        .item-field select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid #e1e5e9;
+          border-radius: 8px;
+          font-size: 16px;
+          margin: 0;
+        }
+        
+        .mobile-amount-display {
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          color: white;
+          padding: 15px;
+          text-align: center;
+          font-weight: 700;
+          font-size: 18px;
+          border-radius: 8px;
+          margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+          .item-table-container {
+            display: none;
+          }
+          
+          .mobile-items-container {
+            display: block;
+          }
+          
+          body {
+            padding: 10px;
+          }
+        }
+        
         .remove-btn { 
           background: #dc3545 !important; 
           color: white !important; 
@@ -322,18 +427,6 @@ app.get("/", (req, res) => {
           .form-row input {
             min-width: auto;
           }
-          
-          body {
-            padding: 10px;
-          }
-          
-          .item-table {
-            font-size: 12px;
-          }
-          
-          .item-table th, .item-table td {
-            padding: 8px 4px;
-          }
         }
         
         .three-col { 
@@ -358,7 +451,7 @@ app.get("/", (req, res) => {
           box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
         
-        button[type="button"]:not(.remove-btn):not(.search-row button) {
+        button[type="button"]:not(.remove-btn):not(.mobile-remove-btn):not(.search-row button) {
           background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
           color: white;
           font-weight: 600;
@@ -367,7 +460,7 @@ app.get("/", (req, res) => {
           transition: all 0.3s ease;
         }
         
-        button[type="button"]:not(.remove-btn):not(.search-row button):hover {
+        button[type="button"]:not(.remove-btn):not(.mobile-remove-btn):not(.search-row button):hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
@@ -499,22 +592,31 @@ app.get("/", (req, res) => {
 
           <div class="items-container">
             <h3>📦 Items & Services</h3>
-            <table class="item-table">
-              <thead>
-                <tr>
-                  <th style="width: 40px;">S.No</th>
-                  <th style="width: 250px;">Item/Service Description</th>
-                  <th style="width: 80px;">Quantity</th>
-                  <th style="width: 80px;">Unit</th>
-                  <th style="width: 90px;">Rate</th>
-                  <th style="width: 90px;">Discount</th>
-                  <th style="width: 100px;">Amount</th>
-                  <th style="width: 80px;">Action</th>
-                </tr>
-              </thead>
-              <tbody id="itemsTableBody">
-              </tbody>
-            </table>
+            
+            <!-- Desktop Table View -->
+            <div class="item-table-container">
+              <table class="item-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">S.No</th>
+                    <th style="width: 250px;">Item/Service Description</th>
+                    <th style="width: 80px;">Quantity</th>
+                    <th style="width: 80px;">Unit</th>
+                    <th style="width: 90px;">Rate</th>
+                    <th style="width: 90px;">Discount</th>
+                    <th style="width: 100px;">Amount</th>
+                    <th style="width: 80px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Mobile Card View -->
+            <div class="mobile-items-container" id="mobileItemsContainer">
+            </div>
+            
             <button type="button" onclick="addItem()">➕ Add New Item</button>
           </div>
           
@@ -591,6 +693,7 @@ app.get("/", (req, res) => {
 
         function populateForm(invoice) {
           document.getElementById('itemsTableBody').innerHTML = '';
+          document.getElementById('mobileItemsContainer').innerHTML = '';
           itemCounter = 0;
           
           document.querySelector('input[name="billto"]').value = invoice.billTo;
@@ -600,13 +703,28 @@ app.get("/", (req, res) => {
           
           invoice.items.forEach(item => {
             addItem();
-            const lastRow = document.getElementById('itemsTableBody').lastElementChild;
-            const inputs = lastRow.querySelectorAll('input, select');
-            inputs[0].value = item.name;
-            inputs[1].value = item.qty;
-            inputs[2].value = item.unit;
-            inputs[3].value = item.rate;
-            inputs[4].value = item.discount;
+            const lastDesktopRow = document.getElementById('itemsTableBody').lastElementChild;
+            const lastMobileCard = document.getElementById('mobileItemsContainer').lastElementChild;
+            
+            // Populate desktop table
+            if (lastDesktopRow) {
+              const inputs = lastDesktopRow.querySelectorAll('input, select');
+              inputs[0].value = item.name;
+              inputs[1].value = item.qty;
+              inputs[2].value = item.unit;
+              inputs[3].value = item.rate;
+              inputs[4].value = item.discount;
+            }
+            
+            // Populate mobile card
+            if (lastMobileCard) {
+              const mobileInputs = lastMobileCard.querySelectorAll('input, select');
+              mobileInputs[0].value = item.name;
+              mobileInputs[1].value = item.qty;
+              mobileInputs[2].value = item.unit;
+              mobileInputs[3].value = item.rate;
+              mobileInputs[4].value = item.discount;
+            }
           });
           
           updateTotals();
@@ -621,6 +739,7 @@ app.get("/", (req, res) => {
           document.getElementById('form').reset();
           document.getElementById('searchInvoice').value = '';
           document.getElementById('itemsTableBody').innerHTML = '';
+          document.getElementById('mobileItemsContainer').innerHTML = '';
           document.getElementById('searchMessage').innerHTML = '';
           clearEditingMode();
           itemCounter = 0;
@@ -636,6 +755,8 @@ app.get("/", (req, res) => {
 
         function addItem() {
           itemCounter++;
+          
+          // Add to desktop table
           const tableBody = document.getElementById('itemsTableBody');
           const row = document.createElement('tr');
           
@@ -645,21 +766,17 @@ app.get("/", (req, res) => {
             <td><input name="qty" type="number" step="0.01" placeholder="0" required /></td>
             <td>
               <select name="unit">
-                <option value="PCS">PCS - Pieces</option>
-                <option value="KG">KG - Kilogram</option>
-                <option value="GM">GM - Gram</option>
-                <option value="LTR">LTR - Litre</option>
-                <option value="ML">ML - Millilitre</option>
-                <option value="DOZ">DOZ - Dozen</option>
-                <option value="BOX">BOX - Box</option>
-                <option value="PKT">PKT - Packet</option>
-                <option value="BTL">BTL - Bottle</option>
-                <option value="TIN">TIN - Tin</option>
-                <option value="BDL">BDL - Bundle</option>
-                <option value="SQM">SQM - Square Meter</option>
-                <option value="MTR">MTR - Meter</option>
-                <option value="SET">SET - Set</option>
-                <option value="UNIT">UNIT - Unit</option>
+              <option value="BDL">BDL - Bundle</option>
+              <option value="BOX">BOX - Box</option>
+              <option value="BTL">BTL - Bottle</option>
+              <option value="DOZ">DOZ - Dozen</option>
+              <option value="GM">GM - Gram</option>
+              <option value="KG">KG - Kilogram</option>
+              <option value="LTR">LTR - Litre</option>
+              <option value="ML">ML - Millilitre</option>
+              <option value="PCS">PCS - Pieces</option>
+              <option value="PKT">PKT - Packet</option>
+              <option value="TIN">TIN - Tin</option>
               </select>
             </td>
             <td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>
@@ -672,14 +789,96 @@ app.get("/", (req, res) => {
           
           tableBody.appendChild(row);
           
-          // Add event listeners to the new row inputs
+          // Add to mobile container
+          const mobileContainer = document.getElementById('mobileItemsContainer');
+          const card = document.createElement('div');
+          card.className = 'item-card';
+          
+          card.innerHTML = \`
+            <div class="item-card-header">
+              <div class="item-number">\${itemCounter}</div>
+              <button type="button" class="mobile-remove-btn" onclick="removeMobileItem(this)">🗑️ Remove</button>
+            </div>
+            
+            <div class="item-field">
+              <label>Item/Service Description:</label>
+              <input name="name" placeholder="Enter item description" required />
+            </div>
+            
+            <div class="item-field">
+              <label>Quantity:</label>
+              <input name="qty" type="number" step="0.01" placeholder="0" required />
+            </div>
+            
+            <div class="item-field">
+              <label>Unit:</label>
+              <select name="unit">
+                <option value="BDL">BDL - Bundle</option>
+                <option value="BOX">BOX - Box</option>
+                <option value="BTL">BTL - Bottle</option>
+                <option value="DOZ">DOZ - Dozen</option>
+                <option value="GM">GM - Gram</option>
+                <option value="KG">KG - Kilogram</option>
+                <option value="LTR">LTR - Litre</option>
+                <option value="ML">ML - Millilitre</option>
+                <option value="PCS">PCS - Pieces</option>
+                <option value="PKT">PKT - Packet</option>
+                <option value="TIN">TIN - Tin</option>
+              </select>
+            </div>
+            
+            <div class="item-field">
+              <label>Rate:</label>
+              <input name="rate" type="number" step="0.01" placeholder="0.00" required />
+            </div>
+            
+            <div class="item-field">
+              <label>Discount:</label>
+              <input name="discount" type="text" placeholder="0 or 10%" />
+            </div>
+            
+            <div class="mobile-amount-display">Amount: ₹0.00</div>
+          \`;
+          
+          mobileContainer.appendChild(card);
+          
+          // Add event listeners to both desktop and mobile inputs
           row.querySelectorAll("input, select").forEach(input => {
             input.addEventListener("input", updateTotals);
             input.addEventListener("input", markFormModified);
+            input.addEventListener("input", syncInputs);
+          });
+          
+          card.querySelectorAll("input, select").forEach(input => {
+            input.addEventListener("input", updateTotals);
+            input.addEventListener("input", markFormModified);
+            input.addEventListener("input", syncInputs);
           });
           
           updateTotals();
           markFormModified();
+        }
+
+        function syncInputs() {
+          // Sync values between desktop table and mobile cards
+          const desktopRows = document.querySelectorAll("#itemsTableBody tr");
+          const mobileCards = document.querySelectorAll(".item-card");
+          
+          desktopRows.forEach((row, index) => {
+            const card = mobileCards[index];
+            if (card) {
+              const rowInputs = row.querySelectorAll("input, select");
+              const cardInputs = card.querySelectorAll("input, select");
+              
+              for (let i = 0; i < rowInputs.length && i < cardInputs.length; i++) {
+                if (event.target === rowInputs[i]) {
+                  cardInputs[i].value = rowInputs[i].value;
+                } else if (event.target === cardInputs[i]) {
+                  rowInputs[i].value = cardInputs[i].value;
+                }
+              }
+            }
+          });
         }
 
         function removeItem(btn) {
@@ -688,17 +887,63 @@ app.get("/", (req, res) => {
             return;
           }
           
-          btn.closest('tr').remove();
+          const row = btn.closest('tr');
+          const rowIndex = Array.from(row.parentNode.children).indexOf(row);
           
-          // Renumber the rows
+          // Remove from desktop table
+          row.remove();
+          
+          // Remove corresponding mobile card
+          const mobileCards = document.querySelectorAll('.item-card');
+          if (mobileCards[rowIndex]) {
+            mobileCards[rowIndex].remove();
+          }
+          
+          renumberItems();
+          updateTotals();
+          markFormModified();
+        }
+
+        function removeMobileItem(btn) {
+          if (document.querySelectorAll('.item-card').length <= 1) {
+            alert('At least one item is required');
+            return;
+          }
+          
+          const card = btn.closest('.item-card');
+          const cardIndex = Array.from(card.parentNode.children).indexOf(card);
+          
+          // Remove from mobile cards
+          card.remove();
+          
+          // Remove corresponding desktop row
+          const desktopRows = document.querySelectorAll('#itemsTableBody tr');
+          if (desktopRows[cardIndex]) {
+            desktopRows[cardIndex].remove();
+          }
+          
+          renumberItems();
+          updateTotals();
+          markFormModified();
+        }
+
+        function renumberItems() {
+          // Renumber desktop table rows
           const rows = document.querySelectorAll('#itemsTableBody tr');
           rows.forEach((row, index) => {
             row.cells[0].textContent = index + 1;
           });
           
+          // Renumber mobile cards
+          const cards = document.querySelectorAll('.item-card');
+          cards.forEach((card, index) => {
+            const numberElement = card.querySelector('.item-number');
+            if (numberElement) {
+              numberElement.textContent = index + 1;
+            }
+          });
+          
           itemCounter = rows.length;
-          updateTotals();
-          markFormModified();
         }
 
         function calculateDiscount(amount, discount) {
@@ -727,7 +972,8 @@ app.get("/", (req, res) => {
         function updateTotals() {
           let total = 0;
           
-          document.querySelectorAll("#itemsTableBody tr").forEach(row => {
+          // Update desktop table amounts
+          document.querySelectorAll("#itemsTableBody tr").forEach((row, index) => {
             const inputs = row.querySelectorAll("input, select");
             const qty = parseFloat(inputs[1].value) || 0;
             const rate = parseFloat(inputs[3].value) || 0;
@@ -739,6 +985,16 @@ app.get("/", (req, res) => {
             
             const amountDisplay = row.querySelector('.amount-display');
             amountDisplay.textContent = netAmount.toFixed(2);
+            
+            // Update corresponding mobile card amount
+            const mobileCards = document.querySelectorAll('.item-card');
+            if (mobileCards[index]) {
+              const mobileAmountDisplay = mobileCards[index].querySelector('.mobile-amount-display');
+              if (mobileAmountDisplay) {
+                mobileAmountDisplay.textContent = `Amount: ₹${netAmount.toFixed(2)}`;
+              }
+            }
+            
             total += netAmount;
           });
           
@@ -765,6 +1021,7 @@ app.get("/", (req, res) => {
             originalInvoiceNo: originalInvoiceNo
           };
 
+          // Use desktop table data for form submission
           document.querySelectorAll("#itemsTableBody tr").forEach(row => {
             const inputs = row.querySelectorAll("input, select");
             const name = inputs[0].value;
@@ -935,7 +1192,7 @@ app.post("/generate", async (req, res) => {
       }
     }
 
-    // Generate Clean, Professional PDF with PDFKit
+    // Generate Clean, Professional PDF with PDFKit (Updated - Removed Discount Column and Signature)
     const doc = new PDFDocument({ 
       size: 'A4', 
       margin: 40,
@@ -969,8 +1226,7 @@ app.post("/generate", async (req, res) => {
 
     let currentY = margin;
 
-    // CLEAN HEADER SECTION
-    // Main title
+    // CLEAN HEADER SECTION - Centered
     drawBox(margin, currentY, contentWidth, 35, '#f5f5f5');
     doc.fontSize(18).font('Helvetica-Bold');
     doc.text('BILL OF SUPPLY', margin, currentY + 10, {
@@ -980,17 +1236,17 @@ app.post("/generate", async (req, res) => {
 
     currentY += 35;
 
-    // Document type indicator
-    drawBox(pageWidth - 180, currentY, 140, 20);
+    // Document type indicator - Centered
+    drawBox(margin + (contentWidth - 140) / 2, currentY, 140, 20);
     doc.fontSize(9).font('Helvetica-Bold');
-    doc.text('ORIGINAL FOR RECIPIENT', pageWidth - 180, currentY + 6, {
+    doc.text('ORIGINAL FOR RECIPIENT', margin + (contentWidth - 140) / 2, currentY + 6, {
       width: 140,
       align: 'center'
     });
 
     currentY += 30;
 
-    // BUSINESS INFORMATION SECTION
+    // BUSINESS INFORMATION SECTION - Centered
     drawBox(margin, currentY, contentWidth, 25, '#f8f9fa');
     doc.fontSize(16).font('Helvetica-Bold');
     doc.text(BILL_NAME, margin, currentY + 6, {
@@ -1000,7 +1256,7 @@ app.post("/generate", async (req, res) => {
 
     currentY += 25;
 
-    // Business details
+    // Business details - Centered
     const businessInfoHeight = 60;
     drawBox(margin, currentY, contentWidth, businessInfoHeight);
 
@@ -1072,38 +1328,30 @@ app.post("/generate", async (req, res) => {
 
     currentY += customerDetailsHeight + 15;
 
-    // CLEAN ITEMS TABLE
+    // CLEAN ITEMS TABLE - WITHOUT DISCOUNT COLUMN
     const tableStartY = currentY;
     const rowHeight = 25;
     const headerRowHeight = 30;
 
-    // Table column definitions with proper alignment
+    // Table column definitions without discount column
     const tableColumns = [
-      { header: 'S.No', width: 40, align: 'center' },
-      { header: 'Item Description', width: 180, align: 'left' },
-      { header: 'Qty', width: 50, align: 'right' },
-      { header: 'Unit', width: 50, align: 'center' },
-      { header: 'Rate', width: 70, align: 'right' },
-      { header: 'Discount', width: 70, align: 'center' },
-      { header: 'Amount', width: 85, align: 'right' }
+      { header: 'S.No', width: 50, align: 'center' },
+      { header: 'Item Description', width: 240, align: 'left' },
+      { header: 'Qty', width: 70, align: 'center' },
+      { header: 'Unit', width: 70, align: 'center' },
+      { header: 'Rate', width: 80, align: 'center' },
+      { header: 'Amount', width: 105, align: 'center' }
     ];
 
     let tableX = margin;
 
-    // Table headers
+    // Table headers - All centered
     tableColumns.forEach(col => {
       drawBox(tableX, currentY, col.width, headerRowHeight, '#e9ecef');
       
       doc.fontSize(10).font('Helvetica-Bold');
       const textY = currentY + 10;
-      
-      if (col.align === 'center') {
-        doc.text(col.header, tableX + 2, textY, { width: col.width - 4, align: 'center' });
-      } else if (col.align === 'right') {
-        doc.text(col.header, tableX + 2, textY, { width: col.width - 4, align: 'right' });
-      } else {
-        doc.text(col.header, tableX + 5, textY);
-      }
+      doc.text(col.header, tableX + 2, textY, { width: col.width - 4, align: 'center' });
       
       tableX += col.width;
     });
@@ -1114,14 +1362,13 @@ app.post("/generate", async (req, res) => {
     items.forEach((item, index) => {
       tableX = margin;
       
-      // Row data
+      // Row data without discount
       const rowData = [
         (index + 1).toString(),
-        item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name,
+        item.name.length > 30 ? item.name.substring(0, 30) + '...' : item.name,
         parseFloat(item.qty).toFixed(2),
         item.unit,
         parseFloat(item.rate).toFixed(2),
-        item.discount || '0',
         parseFloat(item.amount).toFixed(2)
       ];
 
@@ -1131,13 +1378,8 @@ app.post("/generate", async (req, res) => {
         doc.fontSize(9).font('Helvetica');
         const textY = currentY + 8;
         
-        if (col.align === 'center') {
-          doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'center' });
-        } else if (col.align === 'right') {
-          doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'right' });
-        } else {
-          doc.text(rowData[colIndex], tableX + 5, textY);
-        }
+        // Center all content in PDF
+        doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'center' });
         
         tableX += col.width;
       });
@@ -1158,12 +1400,12 @@ app.post("/generate", async (req, res) => {
       currentY += rowHeight;
     }
 
-    // TOTAL SECTION - Simplified without colors
+    // TOTAL SECTION - Simplified without discount column
     const totalRowHeight = 28;
     
     // Total row
     tableX = margin;
-    const totalLabelWidth = tableColumns.slice(0, 5).reduce((sum, col) => sum + col.width, 0);
+    const totalLabelWidth = tableColumns.slice(0, 4).reduce((sum, col) => sum + col.width, 0);
     
     drawBox(tableX, currentY, totalLabelWidth, totalRowHeight, '#f0f0f0');
     doc.fontSize(12).font('Helvetica-Bold');
@@ -1171,22 +1413,22 @@ app.post("/generate", async (req, res) => {
 
     tableX += totalLabelWidth;
 
-    drawBox(tableX, currentY, tableColumns[5].width, totalRowHeight);
+    drawBox(tableX, currentY, tableColumns[4].width, totalRowHeight);
     doc.fontSize(11).font('Helvetica-Bold');
-    doc.text('---', tableX + 2, currentY + 8, { width: tableColumns[5].width - 4, align: 'center' });
+    doc.text('---', tableX + 2, currentY + 8, { width: tableColumns[4].width - 4, align: 'center' });
 
-    tableX += tableColumns[5].width;
+    tableX += tableColumns[4].width;
 
-    drawBox(tableX, currentY, tableColumns[6].width, totalRowHeight, '#f8f9fa');
+    drawBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '#f8f9fa');
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text(`${parseFloat(total).toFixed(2)}`, tableX + 2, currentY + 8, { width: tableColumns[6].width - 4, align: 'right' });
+    doc.text(`${parseFloat(total).toFixed(2)}`, tableX + 2, currentY + 8, { width: tableColumns[5].width - 4, align: 'center' });
 
     currentY += totalRowHeight + 20;
 
-    // AMOUNT IN WORDS SECTION
+    // AMOUNT IN WORDS SECTION - Centered title
     drawBox(margin, currentY, contentWidth, 25, '#f5f5f5');
     doc.fontSize(11).font('Helvetica-Bold');
-    doc.text('Amount in Words', margin + 5, currentY + 8);
+    doc.text('Amount in Words', margin + 5, currentY + 8, { width: contentWidth - 10, align: 'center' });
 
     currentY += 25;
 
@@ -1197,10 +1439,10 @@ app.post("/generate", async (req, res) => {
 
     currentY += 40;
 
-    // TERMS AND CONDITIONS SECTION
+    // TERMS AND CONDITIONS SECTION - Centered title
     drawBox(margin, currentY, contentWidth, 25, '#f5f5f5');
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text('Terms and Conditions', margin + 5, currentY + 8);
+    doc.text('Terms and Conditions', margin + 5, currentY + 8, { width: contentWidth - 10, align: 'center' });
 
     currentY += 25;
 
@@ -1212,18 +1454,7 @@ app.post("/generate", async (req, res) => {
     doc.text(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 10, currentY + 22);
     doc.text('3. Payment terms: As per agreement', margin + 10, currentY + 36);
 
-    // SIGNATURE SECTION
-    currentY += termsHeight + 20;
-    if (currentY < pageHeight - 80) {
-      const signatureWidth = contentWidth / 2;
-      
-      // Authorized Signatory
-      drawBox(margin + signatureWidth, currentY, signatureWidth, 60);
-      
-      doc.fontSize(10).font('Helvetica');
-      doc.text(margin + signatureWidth + 10, currentY + 10);
-      doc.text('Authorized Signatory', margin + signatureWidth + 10, currentY + 40);
-    }
+    // Removed signature section as requested
 
     // Finalize PDF
     doc.end();
