@@ -1,17 +1,17 @@
 {
-  "name": "invoice-app",
+  "name": "invoice-app-render",
   "version": "1.0.0",
   "license": "MIT",
+  "description": "Invoice Generator optimized for Render.com free tier",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "postinstall": "node -e \"console.log('Build completed successfully')\""
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
     "express": "^4.18.2",
-    "puppeteer": "22.15.0",
+    "pdfkit": "^0.14.0",
     "mongoose": "^7.5.0"
   },
   "devDependencies": {
@@ -19,5 +19,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "keywords": ["invoice", "pdf", "render", "express", "mongodb"]
 }
