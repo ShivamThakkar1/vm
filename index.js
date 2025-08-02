@@ -646,7 +646,7 @@ app.get("/", (req, res) => {
 
         function showMessage(message, type = 'info') {
           const messageDiv = document.getElementById('searchMessage');
-          messageDiv.innerHTML = \`<div class="alert alert-\${type}">\${message}</div>\`;
+          messageDiv.innerHTML = '<div class="alert alert-' + type + '">' + message + '</div>';
           setTimeout(() => {
             messageDiv.innerHTML = '';
           }, 5000);
@@ -680,7 +680,7 @@ app.get("/", (req, res) => {
               if (data.success) {
                 populateForm(data.invoice);
                 setEditingMode(invoiceNo);
-                showMessage(\`✅ Invoice \${invoiceNo} loaded successfully! You can now edit and update it.\`, 'success');
+                showMessage('✅ Invoice ' + invoiceNo + ' loaded successfully! You can now edit and update it.', 'success');
               } else {
                 showMessage(data.message || 'Invoice not found', 'error');
               }
@@ -760,32 +760,31 @@ app.get("/", (req, res) => {
           const tableBody = document.getElementById('itemsTableBody');
           const row = document.createElement('tr');
           
-          row.innerHTML = \`
-            <td style="text-align: center; font-weight: bold; background: #f8f9fa;">\${itemCounter}</td>
-            <td><input name="name" placeholder="Enter item description" required /></td>
-            <td><input name="qty" type="number" step="0.01" placeholder="0" required /></td>
-            <td>
-              <select name="unit">
-              <option value="BDL">BDL - Bundle</option>
-              <option value="BOX">BOX - Box</option>
-              <option value="BTL">BTL - Bottle</option>
-              <option value="DOZ">DOZ - Dozen</option>
-              <option value="GM">GM - Gram</option>
-              <option value="KG">KG - Kilogram</option>
-              <option value="LTR">LTR - Litre</option>
-              <option value="ML">ML - Millilitre</option>
-              <option value="PCS">PCS - Pieces</option>
-              <option value="PKT">PKT - Packet</option>
-              <option value="TIN">TIN - Tin</option>
-              </select>
-            </td>
-            <td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>
-            <td><input name="discount" type="text" placeholder="0 or 10%" /></td>
-            <td><div class="amount-display">0.00</div></td>
-            <td style="text-align: center;">
-              <button type="button" class="remove-btn" onclick="removeItem(this)">🗑️ Remove</button>
-            </td>
-          \`;
+          row.innerHTML = 
+            '<td style="text-align: center; font-weight: bold; background: #f8f9fa;">' + itemCounter + '</td>' +
+            '<td><input name="name" placeholder="Enter item description" required /></td>' +
+            '<td><input name="qty" type="number" step="0.01" placeholder="0" required /></td>' +
+            '<td>' +
+              '<select name="unit">' +
+              '<option value="BDL">BDL - Bundle</option>' +
+              '<option value="BOX">BOX - Box</option>' +
+              '<option value="BTL">BTL - Bottle</option>' +
+              '<option value="DOZ">DOZ - Dozen</option>' +
+              '<option value="GM">GM - Gram</option>' +
+              '<option value="KG">KG - Kilogram</option>' +
+              '<option value="LTR">LTR - Litre</option>' +
+              '<option value="ML">ML - Millilitre</option>' +
+              '<option value="PCS">PCS - Pieces</option>' +
+              '<option value="PKT">PKT - Packet</option>' +
+              '<option value="TIN">TIN - Tin</option>' +
+              '</select>' +
+            '</td>' +
+            '<td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>' +
+            '<td><input name="discount" type="text" placeholder="0 or 10%" /></td>' +
+            '<td><div class="amount-display">0.00</div></td>' +
+            '<td style="text-align: center;">' +
+              '<button type="button" class="remove-btn" onclick="removeItem(this)">🗑️ Remove</button>' +
+            '</td>';
           
           tableBody.appendChild(row);
           
@@ -794,51 +793,50 @@ app.get("/", (req, res) => {
           const card = document.createElement('div');
           card.className = 'item-card';
           
-          card.innerHTML = \`
-            <div class="item-card-header">
-              <div class="item-number">\${itemCounter}</div>
-              <button type="button" class="mobile-remove-btn" onclick="removeMobileItem(this)">🗑️ Remove</button>
-            </div>
+          card.innerHTML = 
+            '<div class="item-card-header">' +
+              '<div class="item-number">' + itemCounter + '</div>' +
+              '<button type="button" class="mobile-remove-btn" onclick="removeMobileItem(this)">🗑️ Remove</button>' +
+            '</div>' +
             
-            <div class="item-field">
-              <label>Item/Service Description:</label>
-              <input name="name" placeholder="Enter item description" required />
-            </div>
+            '<div class="item-field">' +
+              '<label>Item/Service Description:</label>' +
+              '<input name="name" placeholder="Enter item description" required />' +
+            '</div>' +
             
-            <div class="item-field">
-              <label>Quantity:</label>
-              <input name="qty" type="number" step="0.01" placeholder="0" required />
-            </div>
+            '<div class="item-field">' +
+              '<label>Quantity:</label>' +
+              '<input name="qty" type="number" step="0.01" placeholder="0" required />' +
+            '</div>' +
             
-            <div class="item-field">
-              <label>Unit:</label>
-              <select name="unit">
-                <option value="BDL">BDL - Bundle</option>
-                <option value="BOX">BOX - Box</option>
-                <option value="BTL">BTL - Bottle</option>
-                <option value="DOZ">DOZ - Dozen</option>
-                <option value="GM">GM - Gram</option>
-                <option value="KG">KG - Kilogram</option>
-                <option value="LTR">LTR - Litre</option>
-                <option value="ML">ML - Millilitre</option>
-                <option value="PCS">PCS - Pieces</option>
-                <option value="PKT">PKT - Packet</option>
-                <option value="TIN">TIN - Tin</option>
-              </select>
-            </div>
+            '<div class="item-field">' +
+              '<label>Unit:</label>' +
+              '<select name="unit">' +
+                '<option value="BDL">BDL - Bundle</option>' +
+                '<option value="BOX">BOX - Box</option>' +
+                '<option value="BTL">BTL - Bottle</option>' +
+                '<option value="DOZ">DOZ - Dozen</option>' +
+                '<option value="GM">GM - Gram</option>' +
+                '<option value="KG">KG - Kilogram</option>' +
+                '<option value="LTR">LTR - Litre</option>' +
+                '<option value="ML">ML - Millilitre</option>' +
+                '<option value="PCS">PCS - Pieces</option>' +
+                '<option value="PKT">PKT - Packet</option>' +
+                '<option value="TIN">TIN - Tin</option>' +
+              '</select>' +
+            '</div>' +
             
-            <div class="item-field">
-              <label>Rate:</label>
-              <input name="rate" type="number" step="0.01" placeholder="0.00" required />
-            </div>
+            '<div class="item-field">' +
+              '<label>Rate:</label>' +
+              '<input name="rate" type="number" step="0.01" placeholder="0.00" required />' +
+            '</div>' +
             
-            <div class="item-field">
-              <label>Discount:</label>
-              <input name="discount" type="text" placeholder="0 or 10%" />
-            </div>
+            '<div class="item-field">' +
+              '<label>Discount:</label>' +
+              '<input name="discount" type="text" placeholder="0 or 10%" />' +
+            '</div>' +
             
-            <div class="mobile-amount-display">Amount: ₹0.00</div>
-          \`;
+            '<div class="mobile-amount-display">Amount: ₹0.00</div>';
           
           mobileContainer.appendChild(card);
           
@@ -991,7 +989,7 @@ app.get("/", (req, res) => {
             if (mobileCards[index]) {
               const mobileAmountDisplay = mobileCards[index].querySelector('.mobile-amount-display');
               if (mobileAmountDisplay) {
-                mobileAmountDisplay.textContent = `Amount: ₹${netAmount.toFixed(2)}`;
+                mobileAmountDisplay.textContent = 'Amount: ₹' + netAmount.toFixed(2);
               }
             }
             
@@ -1077,9 +1075,9 @@ app.get("/", (req, res) => {
               formModified = false;
               
               if (isEditing) {
-                showMessage(\`✅ Invoice \${data.invoice} updated and downloaded successfully!\`, 'success');
+                showMessage('✅ Invoice ' + data.invoice + ' updated and downloaded successfully!', 'success');
               } else {
-                showMessage(\`✅ Invoice \${data.invoice} saved and downloaded successfully!\`, 'success');
+                showMessage('✅ Invoice ' + data.invoice + ' saved and downloaded successfully!', 'success');
               }
             })
             .catch(error => {
