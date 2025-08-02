@@ -50,7 +50,7 @@ const connectMongoDB = async () => {
 // Initialize MongoDB connection
 connectMongoDB();
 
-// Invoice Schema
+// Invoice Schema (removed received field)
 const invoiceSchema = new mongoose.Schema({
   invoiceNo: { type: String, required: true, unique: true },
   billTo: { type: String, required: true },
@@ -65,7 +65,6 @@ const invoiceSchema = new mongoose.Schema({
     amount: Number
   }],
   total: { type: Number, required: true },
-  received: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -142,13 +141,24 @@ app.get("/", (req, res) => {
           display: flex;
           gap: 15px;
           align-items: end;
+          flex-wrap: wrap;
+        }
+        
+        .search-input-wrapper {
+          flex: 1;
+          min-width: 200px;
         }
         
         .search-row input {
-          flex: 1;
           margin: 0;
           border: none;
           background: rgba(255,255,255,0.9);
+        }
+        
+        .search-buttons {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
         }
         
         .search-row button {
@@ -161,6 +171,7 @@ app.get("/", (req, res) => {
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
+          white-space: nowrap;
         }
         
         .search-row button:hover {
@@ -171,7 +182,6 @@ app.get("/", (req, res) => {
         
         .clear-btn {
           background: #fd7e14 !important;
-          margin-left: 10px !important;
         }
         
         .clear-btn:hover {
@@ -181,10 +191,20 @@ app.get("/", (req, res) => {
         @media (max-width: 768px) {
           .search-row {
             flex-direction: column;
+            align-items: stretch;
+          }
+          
+          .search-input-wrapper {
+            min-width: auto;
+          }
+          
+          .search-buttons {
+            justify-content: stretch;
           }
           
           .search-row button {
-            width: 100%;
+            flex: 1;
+            min-width: 120px;
           }
         }
         
@@ -195,6 +215,7 @@ app.get("/", (req, res) => {
           padding: 20px;
           box-shadow: 0 8px 25px rgba(0,0,0,0.1);
           margin-bottom: 25px;
+          overflow-x: auto;
         }
         
         .item-table {
@@ -202,6 +223,7 @@ app.get("/", (req, res) => {
           border-collapse: collapse;
           margin-bottom: 20px;
           font-size: 14px;
+          min-width: 800px;
         }
         
         .item-table th {
@@ -304,16 +326,20 @@ app.get("/", (req, res) => {
           body {
             padding: 10px;
           }
+          
+          .item-table {
+            font-size: 12px;
+          }
+          
+          .item-table th, .item-table td {
+            padding: 8px 4px;
+          }
         }
         
         .three-col { 
           display: grid; 
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
           gap: 15px; 
-        }
-        
-        .received-section { 
-          margin-top: 20px; 
         }
         
         button[type="submit"] {
@@ -426,12 +452,14 @@ app.get("/", (req, res) => {
         <div class="search-section">
           <h3>🔍 Search & Edit Existing Invoice</h3>
           <div class="search-row">
-            <div>
+            <div class="search-input-wrapper">
               <label style="color: white; margin-bottom: 8px;">Invoice Number:</label>
               <input id="searchInvoice" placeholder="Enter invoice number to search" />
             </div>
-            <button type="button" onclick="searchInvoice()">Search Invoice</button>
-            <button type="button" class="clear-btn" onclick="clearForm()">Clear Form</button>
+            <div class="search-buttons">
+              <button type="button" onclick="searchInvoice()">Search Invoice</button>
+              <button type="button" class="clear-btn" onclick="clearForm()">Clear Form</button>
+            </div>
           </div>
           <div id="searchMessage"></div>
         </div>
@@ -492,10 +520,6 @@ app.get("/", (req, res) => {
           
           <div class="form-section">
             <div class="total-display">💰 Total Amount: ₹<span id="total">0.00</span></div>
-            <div class="received-section">
-              <label>Amount Received:</label>
-              <input name="received" type="number" step="0.01" placeholder="Enter amount received (default: 0)" />
-            </div>
           </div>
           
           <button type="submit" id="submitBtn">💾 Save & Download PDF</button>
@@ -573,7 +597,6 @@ app.get("/", (req, res) => {
           document.querySelector('input[name="invoice"]').value = invoice.invoiceNo;
           document.querySelector('input[name="date"]').value = new Date(invoice.date).toISOString().split('T')[0];
           document.querySelector('input[name="duedate"]').value = new Date(invoice.dueDate).toISOString().split('T')[0];
-          document.querySelector('input[name="received"]').value = invoice.received;
           
           invoice.items.forEach(item => {
             addItem();
@@ -737,7 +760,6 @@ app.get("/", (req, res) => {
             invoice: form.get("invoice"),
             date: form.get("date"),
             duedate: form.get("duedate") || form.get("date"),
-            received: form.get("received") || "0",
             items: [],
             isEditing: isEditing,
             originalInvoiceNo: originalInvoiceNo
@@ -864,9 +886,9 @@ function numberToWords(n) {
 
 app.post("/generate", async (req, res) => {
   try {
-    const { billto, invoice, date, duedate, received, items, total, isEditing, originalInvoiceNo } = req.body;
+    const { billto, invoice, date, duedate, items, total, isEditing, originalInvoiceNo } = req.body;
 
-    // Save or update invoice in MongoDB (if available)
+    // Save or update invoice in MongoDB (if available) - removed received field
     if (isMongoConnected) {
       try {
         const invoiceData = {
@@ -883,7 +905,6 @@ app.post("/generate", async (req, res) => {
             amount: parseFloat(item.amount)
           })),
           total: parseFloat(total),
-          received: parseFloat(received),
           updatedAt: new Date()
         };
 
@@ -914,7 +935,7 @@ app.post("/generate", async (req, res) => {
       }
     }
 
-    // Generate Professional PDF with PDFKit
+    // Generate Clean, Professional PDF with PDFKit
     const doc = new PDFDocument({ 
       size: 'A4', 
       margin: 40,
@@ -937,100 +958,52 @@ app.post("/generate", async (req, res) => {
     const margin = 40;
     const contentWidth = pageWidth - (margin * 2);
 
-    // Colors
-    const headerColor = '#2c3e50';
-    const lightGray = '#f8f9fa';
-    const borderColor = '#dee2e6';
-    const primaryColor = '#007bff';
-
-    // Helper function to draw bordered text box
-    function drawTextBox(x, y, width, height, text, options = {}) {
-      const {
-        fontSize = 10,
-        fontType = 'Helvetica',
-        textAlign = 'left',
-        backgroundColor = null,
-        borderColor = '#000000',
-        padding = 5
-      } = options;
-
-      // Draw background if specified
-      if (backgroundColor) {
-        doc.rect(x, y, width, height).fill(backgroundColor);
+    // Helper function to draw simple bordered rectangle
+    function drawBox(x, y, width, height, fillColor = null) {
+      if (fillColor) {
+        doc.rect(x, y, width, height).fill(fillColor);
         doc.fillColor('#000000'); // Reset to black
       }
-
-      // Draw border
-      doc.rect(x, y, width, height).stroke(borderColor);
-
-      // Draw text
-      doc.fontSize(fontSize).font(fontType);
-      const textY = y + (height - fontSize) / 2;
-      
-      if (textAlign === 'center') {
-        doc.text(text, x + padding, textY, { 
-          width: width - (padding * 2), 
-          align: 'center'
-        });
-      } else if (textAlign === 'right') {
-        doc.text(text, x + padding, textY, { 
-          width: width - (padding * 2), 
-          align: 'right'
-        });
-      } else {
-        doc.text(text, x + padding, textY);
-      }
+      doc.rect(x, y, width, height).stroke('#000000');
     }
 
     let currentY = margin;
 
-    // HEADER SECTION WITH PROFESSIONAL STYLING
-    // Main title bar
-    drawTextBox(margin, currentY, contentWidth, 35, 'BILL OF SUPPLY', {
-      fontSize: 18,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: headerColor
-    });
-    
-    // Set text color to white for header
-    doc.fillColor('#ffffff');
+    // CLEAN HEADER SECTION
+    // Main title
+    drawBox(margin, currentY, contentWidth, 35, '#f5f5f5');
     doc.fontSize(18).font('Helvetica-Bold');
-    doc.text('BILL OF SUPPLY', margin, currentY + 8, {
+    doc.text('BILL OF SUPPLY', margin, currentY + 10, {
       width: contentWidth,
       align: 'center'
     });
-    doc.fillColor('#000000'); // Reset to black
 
     currentY += 35;
 
     // Document type indicator
-    drawTextBox(pageWidth - 180, currentY, 140, 20, 'ORIGINAL FOR RECIPIENT', {
-      fontSize: 9,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: lightGray
+    drawBox(pageWidth - 180, currentY, 140, 20);
+    doc.fontSize(9).font('Helvetica-Bold');
+    doc.text('ORIGINAL FOR RECIPIENT', pageWidth - 180, currentY + 6, {
+      width: 140,
+      align: 'center'
     });
 
     currentY += 30;
 
     // BUSINESS INFORMATION SECTION
-    drawTextBox(margin, currentY, contentWidth, 25, BILL_NAME, {
-      fontSize: 16,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: lightGray
+    drawBox(margin, currentY, contentWidth, 25, '#f8f9fa');
+    doc.fontSize(16).font('Helvetica-Bold');
+    doc.text(BILL_NAME, margin, currentY + 6, {
+      width: contentWidth,
+      align: 'center'
     });
 
     currentY += 25;
 
     // Business details
     const businessInfoHeight = 60;
-    drawTextBox(margin, currentY, contentWidth, businessInfoHeight, '', {
-      backgroundColor: '#ffffff'
-    });
+    drawBox(margin, currentY, contentWidth, businessInfoHeight);
 
-    // Business address and contact
     doc.fontSize(11).font('Helvetica');
     let businessY = currentY + 10;
     doc.text(BILL_ADDRESS, margin + 10, businessY, {
@@ -1051,58 +1024,30 @@ app.post("/generate", async (req, res) => {
     const colWidth = contentWidth / 2;
 
     // Bill To section (left half)
-    drawTextBox(margin, currentY, colWidth - 5, detailsRowHeight, 'BILL TO', {
-      fontSize: 11,
-      fontType: 'Helvetica-Bold',
-      backgroundColor: headerColor
-    });
-    
-    doc.fillColor('#ffffff');
+    drawBox(margin, currentY, colWidth - 5, detailsRowHeight, '#e9ecef');
     doc.fontSize(11).font('Helvetica-Bold');
-    doc.text('BILL TO', margin + 5, currentY + 6);
-    doc.fillColor('#000000');
+    doc.text('BILL TO', margin + 5, currentY + 8);
 
     // Invoice meta info (right half)
     const metaStartX = margin + colWidth + 5;
     const metaColWidth = (colWidth - 10) / 3;
 
-    drawTextBox(metaStartX, currentY, metaColWidth, detailsRowHeight, 'Invoice No.', {
-      fontSize: 10,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: headerColor
-    });
-
-    drawTextBox(metaStartX + metaColWidth, currentY, metaColWidth, detailsRowHeight, 'Invoice Date', {
-      fontSize: 10,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: headerColor
-    });
-
-    drawTextBox(metaStartX + (metaColWidth * 2), currentY, metaColWidth, detailsRowHeight, 'Due Date', {
-      fontSize: 10,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: headerColor
-    });
-
-    // Header text in white
-    doc.fillColor('#ffffff');
+    drawBox(metaStartX, currentY, metaColWidth, detailsRowHeight, '#e9ecef');
     doc.fontSize(10).font('Helvetica-Bold');
-    doc.text('Invoice No.', metaStartX, currentY + 7, { width: metaColWidth, align: 'center' });
-    doc.text('Invoice Date', metaStartX + metaColWidth, currentY + 7, { width: metaColWidth, align: 'center' });
-    doc.text('Due Date', metaStartX + (metaColWidth * 2), currentY + 7, { width: metaColWidth, align: 'center' });
-    doc.fillColor('#000000');
+    doc.text('Invoice No.', metaStartX + 5, currentY + 8);
+
+    drawBox(metaStartX + metaColWidth, currentY, metaColWidth, detailsRowHeight, '#e9ecef');
+    doc.text('Invoice Date', metaStartX + metaColWidth + 5, currentY + 8);
+
+    drawBox(metaStartX + (metaColWidth * 2), currentY, metaColWidth, detailsRowHeight, '#e9ecef');
+    doc.text('Due Date', metaStartX + (metaColWidth * 2) + 5, currentY + 8);
 
     currentY += detailsRowHeight;
 
     // Customer details and invoice values
     const customerDetailsHeight = 50;
     
-    drawTextBox(margin, currentY, colWidth - 5, customerDetailsHeight, '', {
-      backgroundColor: '#ffffff'
-    });
+    drawBox(margin, currentY, colWidth - 5, customerDetailsHeight);
 
     // Customer info
     doc.fontSize(10).font('Helvetica');
@@ -1115,35 +1060,28 @@ app.post("/generate", async (req, res) => {
     });
 
     // Invoice values
-    drawTextBox(metaStartX, currentY, metaColWidth, customerDetailsHeight, invoice, {
-      fontSize: 10,
-      textAlign: 'center'
-    });
+    drawBox(metaStartX, currentY, metaColWidth, customerDetailsHeight);
+    doc.fontSize(10).font('Helvetica');
+    doc.text(invoice, metaStartX + 5, currentY + 20);
 
-    drawTextBox(metaStartX + metaColWidth, currentY, metaColWidth, customerDetailsHeight, 
-      new Date(date).toLocaleDateString('en-GB'), {
-      fontSize: 10,
-      textAlign: 'center'
-    });
+    drawBox(metaStartX + metaColWidth, currentY, metaColWidth, customerDetailsHeight);
+    doc.text(new Date(date).toLocaleDateString('en-GB'), metaStartX + metaColWidth + 5, currentY + 20);
 
-    drawTextBox(metaStartX + (metaColWidth * 2), currentY, metaColWidth, customerDetailsHeight, 
-      new Date(duedate).toLocaleDateString('en-GB'), {
-      fontSize: 10,
-      textAlign: 'center'
-    });
+    drawBox(metaStartX + (metaColWidth * 2), currentY, metaColWidth, customerDetailsHeight);
+    doc.text(new Date(duedate).toLocaleDateString('en-GB'), metaStartX + (metaColWidth * 2) + 5, currentY + 20);
 
     currentY += customerDetailsHeight + 15;
 
-    // PROFESSIONAL ITEMS TABLE
+    // CLEAN ITEMS TABLE
     const tableStartY = currentY;
     const rowHeight = 25;
     const headerRowHeight = 30;
 
-    // Table column definitions with better spacing
+    // Table column definitions with proper alignment
     const tableColumns = [
       { header: 'S.No', width: 40, align: 'center' },
       { header: 'Item Description', width: 180, align: 'left' },
-      { header: 'Qty', width: 50, align: 'center' },
+      { header: 'Qty', width: 50, align: 'right' },
       { header: 'Unit', width: 50, align: 'center' },
       { header: 'Rate (₹)', width: 70, align: 'right' },
       { header: 'Discount', width: 70, align: 'center' },
@@ -1152,19 +1090,13 @@ app.post("/generate", async (req, res) => {
 
     let tableX = margin;
 
-    // Table headers with professional styling
+    // Table headers
     tableColumns.forEach(col => {
-      drawTextBox(tableX, currentY, col.width, headerRowHeight, col.header, {
-        fontSize: 10,
-        fontType: 'Helvetica-Bold',
-        textAlign: col.align,
-        backgroundColor: headerColor
-      });
+      drawBox(tableX, currentY, col.width, headerRowHeight, '#e9ecef');
       
-      // White text for headers
-      doc.fillColor('#ffffff');
       doc.fontSize(10).font('Helvetica-Bold');
-      const textY = currentY + (headerRowHeight - 10) / 2;
+      const textY = currentY + 10;
+      
       if (col.align === 'center') {
         doc.text(col.header, tableX + 2, textY, { width: col.width - 4, align: 'center' });
       } else if (col.align === 'right') {
@@ -1172,25 +1104,21 @@ app.post("/generate", async (req, res) => {
       } else {
         doc.text(col.header, tableX + 5, textY);
       }
-      doc.fillColor('#000000');
       
       tableX += col.width;
     });
 
     currentY += headerRowHeight;
 
-    // Table data rows with alternating colors
+    // Table data rows
     items.forEach((item, index) => {
-      const isEvenRow = index % 2 === 0;
-      const rowBgColor = isEvenRow ? '#ffffff' : lightGray;
-      
       tableX = margin;
       
       // Row data
       const rowData = [
         (index + 1).toString(),
         item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name,
-        item.qty.toString(),
+        parseFloat(item.qty).toFixed(2),
         item.unit,
         parseFloat(item.rate).toFixed(2),
         item.discount || '0',
@@ -1198,136 +1126,86 @@ app.post("/generate", async (req, res) => {
       ];
 
       tableColumns.forEach((col, colIndex) => {
-        drawTextBox(tableX, currentY, col.width, rowHeight, rowData[colIndex], {
-          fontSize: 9,
-          textAlign: col.align,
-          backgroundColor: rowBgColor
-        });
+        drawBox(tableX, currentY, col.width, rowHeight);
+        
+        doc.fontSize(9).font('Helvetica');
+        const textY = currentY + 8;
+        
+        if (col.align === 'center') {
+          doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'center' });
+        } else if (col.align === 'right') {
+          doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'right' });
+        } else {
+          doc.text(rowData[colIndex], tableX + 5, textY);
+        }
+        
         tableX += col.width;
       });
 
       currentY += rowHeight;
     });
 
-    // Add empty rows for professional appearance
+    // Add empty rows for clean appearance
     const minRows = 8;
     const emptyRowsNeeded = Math.max(0, minRows - items.length);
     
     for (let i = 0; i < emptyRowsNeeded; i++) {
-      const isEvenRow = (items.length + i) % 2 === 0;
-      const rowBgColor = isEvenRow ? '#ffffff' : lightGray;
-      
       tableX = margin;
       tableColumns.forEach(col => {
-        drawTextBox(tableX, currentY, col.width, rowHeight, '', {
-          backgroundColor: rowBgColor
-        });
+        drawBox(tableX, currentY, col.width, rowHeight);
         tableX += col.width;
       });
       currentY += rowHeight;
     }
 
-    // TOTALS SECTION with enhanced styling
+    // TOTAL SECTION - Simplified without colors
     const totalRowHeight = 28;
     
     // Total row
     tableX = margin;
     const totalLabelWidth = tableColumns.slice(0, 5).reduce((sum, col) => sum + col.width, 0);
     
-    drawTextBox(tableX, currentY, totalLabelWidth, totalRowHeight, 'TOTAL AMOUNT', {
-      fontSize: 12,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: primaryColor
-    });
-
-    doc.fillColor('#ffffff');
+    drawBox(tableX, currentY, totalLabelWidth, totalRowHeight, '#f0f0f0');
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text('TOTAL AMOUNT', tableX, currentY + 8, { width: totalLabelWidth, align: 'center' });
-    doc.fillColor('#000000');
+    doc.text('TOTAL AMOUNT', tableX + 5, currentY + 8, { width: totalLabelWidth - 10, align: 'center' });
 
     tableX += totalLabelWidth;
 
-    drawTextBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '---', {
-      fontSize: 11,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: lightGray
-    });
-
-    tableX += tableColumns[5].width;
-
-    drawTextBox(tableX, currentY, tableColumns[6].width, totalRowHeight, `₹ ${parseFloat(total).toFixed(2)}`, {
-      fontSize: 12,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'right',
-      backgroundColor: '#d4edda'
-    });
-
-    currentY += totalRowHeight;
-
-    // Received amount row
-    tableX = margin;
-    
-    drawTextBox(tableX, currentY, totalLabelWidth, totalRowHeight, 'RECEIVED AMOUNT', {
-      fontSize: 11,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'center',
-      backgroundColor: '#6c757d'
-    });
-
-    doc.fillColor('#ffffff');
+    drawBox(tableX, currentY, tableColumns[5].width, totalRowHeight);
     doc.fontSize(11).font('Helvetica-Bold');
-    doc.text('RECEIVED AMOUNT', tableX, currentY + 8, { width: totalLabelWidth, align: 'center' });
-    doc.fillColor('#000000');
-
-    tableX += totalLabelWidth;
-
-    drawTextBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '---', {
-      fontSize: 11,
-      textAlign: 'center',
-      backgroundColor: lightGray
-    });
+    doc.text('---', tableX + 2, currentY + 8, { width: tableColumns[5].width - 4, align: 'center' });
 
     tableX += tableColumns[5].width;
 
-    drawTextBox(tableX, currentY, tableColumns[6].width, totalRowHeight, `₹ ${parseFloat(received).toFixed(2)}`, {
-      fontSize: 11,
-      fontType: 'Helvetica-Bold',
-      textAlign: 'right',
-      backgroundColor: '#fff3cd'
-    });
+    drawBox(tableX, currentY, tableColumns[6].width, totalRowHeight, '#f8f9fa');
+    doc.fontSize(12).font('Helvetica-Bold');
+    doc.text(`₹ ${parseFloat(total).toFixed(2)}`, tableX + 2, currentY + 8, { width: tableColumns[6].width - 4, align: 'right' });
 
     currentY += totalRowHeight + 20;
 
     // AMOUNT IN WORDS SECTION
-    drawTextBox(margin, currentY, contentWidth, 25, 'Amount in Words', {
-      fontSize: 11,
-      fontType: 'Helvetica-Bold',
-      backgroundColor: lightGray
-    });
+    drawBox(margin, currentY, contentWidth, 25, '#f5f5f5');
+    doc.fontSize(11).font('Helvetica-Bold');
+    doc.text('Amount in Words', margin + 5, currentY + 8);
 
     currentY += 25;
 
     const totalInWords = numberToWords(Math.floor(parseFloat(total))).trim() + " Rupees Only";
-    drawTextBox(margin, currentY, contentWidth, 30, totalInWords, {
-      fontSize: 10,
-      fontType: 'Helvetica-Bold'
-    });
+    drawBox(margin, currentY, contentWidth, 30);
+    doc.fontSize(10).font('Helvetica-Bold');
+    doc.text(totalInWords, margin + 10, currentY + 10);
 
     currentY += 40;
 
     // TERMS AND CONDITIONS SECTION
-    drawTextBox(margin, currentY, contentWidth, 25, 'Terms and Conditions', {
-      fontSize: 12,
-      fontType: 'Helvetica-Bold',
-      backgroundColor: lightGray
-    });
+    drawBox(margin, currentY, contentWidth, 25, '#f5f5f5');
+    doc.fontSize(12).font('Helvetica-Bold');
+    doc.text('Terms and Conditions', margin + 5, currentY + 8);
 
     currentY += 25;
 
     const termsHeight = 50;
-    drawTextBox(margin, currentY, contentWidth, termsHeight, '');
+    drawBox(margin, currentY, contentWidth, termsHeight);
 
     doc.fontSize(9).font('Helvetica');
     doc.text('1. Goods once sold will not be taken back or exchanged', margin + 10, currentY + 8);
@@ -1340,7 +1218,7 @@ app.post("/generate", async (req, res) => {
       const signatureWidth = contentWidth / 2;
       
       // Authorized Signatory
-      drawTextBox(margin + signatureWidth, currentY, signatureWidth, 60, '');
+      drawBox(margin + signatureWidth, currentY, signatureWidth, 60);
       
       doc.fontSize(10).font('Helvetica');
       doc.text('For ' + BILL_NAME, margin + signatureWidth + 10, currentY + 10);
