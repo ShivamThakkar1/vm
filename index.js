@@ -1139,6 +1139,42 @@ function numberToWords(n) {
   return numberToWords(Math.floor(n / 10000000)) + " Crore " + numberToWords(n % 10000000);
 }
 
+// Helper function to calculate text height for PDF
+function calculateTextHeight(doc, text, options) {
+  const lines = doc.heightOfString(text, options);
+  return lines;
+}
+
+// Helper function to wrap text and get lines
+function wrapText(doc, text, width) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  
+  for (let word of words) {
+    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+    const testWidth = doc.widthOfString(testLine);
+    
+    if (testWidth <= width) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        // Word is too long, break it
+        lines.push(word);
+      }
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  return lines;
+}
+
 app.post("/generate", async (req, res) => {
   try {
     const { billto, invoice, date, duedate, items, total, isEditing, originalInvoiceNo } = req.body;
@@ -1190,7 +1226,7 @@ app.post("/generate", async (req, res) => {
       }
     }
 
-    // Generate Clean, Professional PDF with PDFKit (Updated - Removed Discount Column and Signature)
+    // Generate Clean, Professional PDF with PDFKit (Updated with fixes)
     const doc = new PDFDocument({ 
       size: 'A4', 
       margin: 40,
@@ -1234,11 +1270,12 @@ app.post("/generate", async (req, res) => {
 
     currentY += 35;
 
-    // Document type indicator - Centered and properly sized
+    // Document type indicator - RIGHT ALIGNED and HIGHLIGHTED IN GRAY
     const recipientBoxWidth = 180;
-    drawBox(margin + (contentWidth - recipientBoxWidth) / 2, currentY, recipientBoxWidth, 20);
+    const recipientBoxX = margin + contentWidth - recipientBoxWidth;
+    drawBox(recipientBoxX, currentY, recipientBoxWidth, 20, '#e9ecef'); // Gray background
     doc.fontSize(9).font('Helvetica-Bold');
-    doc.text('ORIGINAL FOR RECIPIENT', margin + (contentWidth - recipientBoxWidth) / 2 + 5, currentY + 6, {
+    doc.text('ORIGINAL FOR RECIPIENT', recipientBoxX + 5, currentY + 6, {
       width: recipientBoxWidth - 10,
       align: 'center'
     });
@@ -1327,9 +1364,9 @@ app.post("/generate", async (req, res) => {
 
     currentY += customerDetailsHeight + 15;
 
-    // CLEAN ITEMS TABLE - Fixed column widths to fit properly
+    // ENHANCED ITEMS TABLE - With dynamic row heights for long product names
     const tableStartY = currentY;
-    const rowHeight = 25;
+    const baseRowHeight = 25;
     const headerRowHeight = 30;
 
     // Table column definitions - properly sized to fit within page margins
@@ -1342,13 +1379,9 @@ app.post("/generate", async (req, res) => {
       { header: 'Amount', width: 105, align: 'center' }
     ];
 
-    // Ensure total table width doesn't exceed content width
-    const totalTableWidth = tableColumns.reduce((sum, col) => sum + col.width, 0);
-    console.log('Total table width:', totalTableWidth, 'Content width:', contentWidth);
-
     let tableX = margin;
 
-    // Table headers - All centered
+    // Table headers
     tableColumns.forEach(col => {
       drawBox(tableX, currentY, col.width, headerRowHeight, '#e9ecef');
       
@@ -1361,15 +1394,19 @@ app.post("/generate", async (req, res) => {
 
     currentY += headerRowHeight;
 
-    // Table data rows - with better text handling
+    // Table data rows - with DYNAMIC HEIGHT for long product names
     items.forEach((item, index) => {
       tableX = margin;
       
-      // Row data without discount - with proper text truncation
-      const itemName = item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name;
+      // Calculate required height for the item description
+      doc.fontSize(9).font('Helvetica');
+      const descriptionWidth = tableColumns[1].width - 10; // Item description column width minus padding
+      const wrappedLines = wrapText(doc, item.name, descriptionWidth);
+      const requiredHeight = Math.max(baseRowHeight, wrappedLines.length * 12 + 10);
+      
       const rowData = [
         (index + 1).toString(),
-        itemName,
+        item.name, // Full name, no truncation
         parseFloat(item.qty).toFixed(2),
         item.unit,
         parseFloat(item.rate).toFixed(2),
@@ -1377,36 +1414,45 @@ app.post("/generate", async (req, res) => {
       ];
 
       tableColumns.forEach((col, colIndex) => {
-        drawBox(tableX, currentY, col.width, rowHeight);
+        drawBox(tableX, currentY, col.width, requiredHeight);
         
         doc.fontSize(9).font('Helvetica');
         const textY = currentY + 8;
         
         if (colIndex === 1) {
-          // Left align item description
-          doc.text(rowData[colIndex], tableX + 5, textY, { width: col.width - 10, align: 'left' });
+          // Handle multi-line item description with proper wrapping
+          wrappedLines.forEach((line, lineIndex) => {
+            doc.text(line, tableX + 5, textY + (lineIndex * 12), { 
+              width: col.width - 10, 
+              align: 'left' 
+            });
+          });
         } else {
-          // Center align all other columns
-          doc.text(rowData[colIndex], tableX + 2, textY, { width: col.width - 4, align: 'center' });
+          // Center align all other columns - vertically centered
+          const verticalCenter = textY + (requiredHeight - baseRowHeight) / 2;
+          doc.text(rowData[colIndex], tableX + 2, verticalCenter, { 
+            width: col.width - 4, 
+            align: 'center' 
+          });
         }
         
         tableX += col.width;
       });
 
-      currentY += rowHeight;
+      currentY += requiredHeight;
     });
 
-    // Add empty rows for clean appearance
+    // Add empty rows for clean appearance if needed
     const minRows = 8;
     const emptyRowsNeeded = Math.max(0, minRows - items.length);
     
     for (let i = 0; i < emptyRowsNeeded; i++) {
       tableX = margin;
       tableColumns.forEach(col => {
-        drawBox(tableX, currentY, col.width, rowHeight);
+        drawBox(tableX, currentY, col.width, baseRowHeight);
         tableX += col.width;
       });
-      currentY += rowHeight;
+      currentY += baseRowHeight;
     }
 
     // TOTAL SECTION - Fixed to align properly with table
@@ -1464,8 +1510,6 @@ app.post("/generate", async (req, res) => {
     doc.text('1. Goods once sold will not be taken back or exchanged', margin + 10, currentY + 8);
     doc.text(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 10, currentY + 22);
     doc.text('3. Payment terms: As per agreement', margin + 10, currentY + 36);
-
-    // Removed signature section as requested
 
     // Finalize PDF
     doc.end();
