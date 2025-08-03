@@ -632,164 +632,31 @@ app.get("/", (req, res) => {
         let formModified = false;
         let itemCounter = 0;
         
-        // Enhanced reload prevention - FIXED MOBILE PROTECTION
-        
-        // Detect mobile browsers
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isAndroid = /Android/.test(navigator.userAgent);
-        
-        // 1. Standard beforeunload event (works on desktop and some mobile browsers)
+        // Enhanced reload prevention - multiple safety checks
         window.addEventListener('beforeunload', function (e) {
           if (formModified) {
-            // For mobile browsers, this is less reliable but still worth trying
-            const message = 'You have unsaved changes. Are you sure you want to leave?';
             e.preventDefault();
-            e.returnValue = message;
-            return message;
+            e.returnValue = 'Are you sure you want to leave? Your unsaved changes will be lost.';
+            return e.returnValue;
           }
         });
 
-        // 2. Desktop keyboard shortcuts protection
+        // Additional protection for accidental page refresh
         document.addEventListener('keydown', function(e) {
+          // Prevent F5 and Ctrl+R if form is modified
           if (formModified && ((e.key === 'F5') || (e.ctrlKey && e.key === 'r'))) {
             e.preventDefault();
             if (confirm('You have unsaved changes. Are you sure you want to refresh the page?')) {
-              formModified = false;
               window.location.reload();
             }
           }
         });
 
-        // 3. FIXED Mobile pull-to-refresh prevention
-        let startY = 0;
-        let isAtTop = false;
-        let pullDistance = 0;
-        
-        if (isMobile) {
-          document.addEventListener('touchstart', function(e) {
-            startY = e.touches[0].clientY;
-            isAtTop = (window.pageYOffset === 0 || document.documentElement.scrollTop === 0);
-            pullDistance = 0;
-          }, { passive: true });
-
-          document.addEventListener('touchmove', function(e) {
-            if (formModified && isAtTop) {
-              const currentY = e.touches[0].clientY;
-              pullDistance = currentY - startY;
-              
-              // Only prevent if pulling down significantly (more than 50px) at top of page
-              if (pullDistance > 50) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Show confirmation after significant pull
-                if (pullDistance > 100) {
-                  setTimeout(() => {
-                    if (confirm('You have unsaved changes. Do you really want to refresh and lose your data?')) {
-                      formModified = false;
-                      window.location.reload();
-                    }
-                  }, 100);
-                }
-              }
-            }
-          }, { passive: false });
-        }
-
-        // 4. FIXED iOS Safari specific protection
-        if (isIOS) {
-          // Backup data when page might be hidden
-          window.addEventListener('pagehide', function(e) {
-            if (formModified) {
-              try {
-                localStorage.setItem('invoiceFormBackup', JSON.stringify({
-                  billto: document.querySelector('input[name="billto"]').value || '',
-                  invoice: document.querySelector('input[name="invoice"]').value || '',
-                  date: document.querySelector('input[name="date"]').value || '',
-                  duedate: document.querySelector('input[name="duedate"]').value || '',
-                  isEditing: document.getElementById('isEditing').value || 'false',
-                  originalInvoiceNo: document.getElementById('originalInvoiceNo').value || '',
-                  timestamp: Date.now()
-                }));
-              } catch(e) {
-                console.log('Could not backup form data');
-              }
-            }
-          });
-
-          // Restore data when page is shown again
-          window.addEventListener('pageshow', function(e) {
-            setTimeout(() => {
-              try {
-                const backup = localStorage.getItem('invoiceFormBackup');
-                if (backup) {
-                  const data = JSON.parse(backup);
-                  const timeDiff = Date.now() - data.timestamp;
-                  
-                  // If backup is less than 5 minutes old and has actual data
-                  if (timeDiff < 300000 && data.billto && !formModified) {
-                    if (confirm('Previous invoice data found. Would you like to restore it?')) {
-                      document.querySelector('input[name="billto"]').value = data.billto;
-                      document.querySelector('input[name="invoice"]').value = data.invoice;
-                      document.querySelector('input[name="date"]').value = data.date;
-                      document.querySelector('input[name="duedate"]').value = data.duedate;
-                      
-                      if (data.isEditing === 'true' && data.originalInvoiceNo) {
-                        setEditingMode(data.originalInvoiceNo);
-                      }
-                      
-                      markFormModified();
-                      showMessage('Previous invoice data restored!', 'success');
-                    }
-                  }
-                  localStorage.removeItem('invoiceFormBackup');
-                }
-              } catch(e) {
-                console.log('Could not restore form data');
-              }
-            }, 500);
-          });
-        }
-
-        // 5. FIXED Back button protection for all platforms
-        let backButtonPressed = false;
-        
+        // Prevent accidental back button if form is modified
         window.addEventListener('popstate', function(e) {
-          if (formModified && !backButtonPressed) {
-            backButtonPressed = true;
-            
-            // Push state back to prevent immediate navigation
-            window.history.pushState(null, null, window.location.href);
-            
-            setTimeout(() => {
-              if (confirm('You have unsaved invoice changes. Are you sure you want to leave this page?')) {
-                formModified = false;
-                backButtonPressed = false;
-                window.history.back();
-              } else {
-                backButtonPressed = false;
-              }
-            }, 100);
-          }
-        });
-
-        // 6. FIXED Page visibility change handling
-        document.addEventListener('visibilitychange', function() {
-          if (formModified && document.hidden) {
-            // Backup data when page becomes hidden (app switching, etc.)
-            try {
-              localStorage.setItem('invoiceFormBackup', JSON.stringify({
-                billto: document.querySelector('input[name="billto"]').value || '',
-                invoice: document.querySelector('input[name="invoice"]').value || '',
-                date: document.querySelector('input[name="date"]').value || '',
-                duedate: document.querySelector('input[name="duedate"]').value || '',
-                isEditing: document.getElementById('isEditing').value || 'false',
-                originalInvoiceNo: document.getElementById('originalInvoiceNo').value || '',
-                timestamp: Date.now()
-              }));
-            } catch(e) {
-              console.log('Could not backup form data');
+          if (formModified) {
+            if (!confirm('You have unsaved changes. Are you sure you want to go back?')) {
+              window.history.pushState(null, null, window.location.href);
             }
           }
         });
@@ -908,13 +775,6 @@ app.get("/", (req, res) => {
           addItem();
           formModified = false;
           updateTotals();
-          
-          // Clear any stored backup data
-          try {
-            localStorage.removeItem('invoiceFormBackup');
-          } catch(e) {
-            console.log('Could not clear backup data');
-          }
         }
 
         function addItem() {
@@ -1237,13 +1097,6 @@ app.get("/", (req, res) => {
               
               setTimeout(() => window.URL.revokeObjectURL(url), 100);
               formModified = false;
-              
-              // Clear backup data after successful save
-              try {
-                localStorage.removeItem('invoiceFormBackup');
-              } catch(e) {
-                console.log('Could not clear backup data');
-              }
               
               if (isEditing) {
                 showMessage('✅ Invoice ' + data.invoice + ' updated and downloaded successfully!', 'success');
