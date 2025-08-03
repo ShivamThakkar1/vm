@@ -632,6 +632,7 @@ app.get("/", (req, res) => {
         let formModified = false;
         let itemCounter = 0;
         
+        // Enhanced reload prevention - multiple safety checks
         window.addEventListener('beforeunload', function (e) {
           if (formModified) {
             e.preventDefault();
@@ -639,6 +640,29 @@ app.get("/", (req, res) => {
             return e.returnValue;
           }
         });
+
+        // Additional protection for accidental page refresh
+        document.addEventListener('keydown', function(e) {
+          // Prevent F5 and Ctrl+R if form is modified
+          if (formModified && ((e.key === 'F5') || (e.ctrlKey && e.key === 'r'))) {
+            e.preventDefault();
+            if (confirm('You have unsaved changes. Are you sure you want to refresh the page?')) {
+              window.location.reload();
+            }
+          }
+        });
+
+        // Prevent accidental back button if form is modified
+        window.addEventListener('popstate', function(e) {
+          if (formModified) {
+            if (!confirm('You have unsaved changes. Are you sure you want to go back?')) {
+              window.history.pushState(null, null, window.location.href);
+            }
+          }
+        });
+
+        // Push initial state for back button protection
+        window.history.pushState(null, null, window.location.href);
 
         function markFormModified() {
           formModified = true;
@@ -1311,19 +1335,27 @@ app.post("/generate", async (req, res) => {
 
     currentY += businessInfoHeight + 10;
 
-    // INVOICE DETAILS SECTION
+    // INVOICE DETAILS SECTION - Properly aligned with table
     const detailsRowHeight = 25;
-    const colWidth = contentWidth / 2;
+    
+    // Calculate proper alignment with the table that comes later
+    const tableColumns = [
+      { width: 40 }, { width: 200 }, { width: 50 }, { width: 50 }, { width: 70 }, { width: 105 }
+    ];
+    const totalTableWidth = tableColumns.reduce((sum, col) => sum + col.width, 0);
+    
+    // Make BILL TO section extend to align with table properly
+    const billToWidth = tableColumns[0].width + tableColumns[1].width + tableColumns[2].width; // S.No + Item + Qty columns
+    const metaStartX = margin + billToWidth + 10; // Small gap
+    const metaWidth = totalTableWidth - billToWidth - 10; // Remaining width
+    const metaColWidth = metaWidth / 3;
 
-    // Bill To section (left half)
-    drawBox(margin, currentY, colWidth - 5, detailsRowHeight, '#e9ecef');
+    // Bill To section (aligned with first 3 table columns)
+    drawBox(margin, currentY, billToWidth, detailsRowHeight, '#e9ecef');
     doc.fontSize(11).font('Helvetica-Bold');
     doc.text('BILL TO', margin + 5, currentY + 8);
 
-    // Invoice meta info (right half)
-    const metaStartX = margin + colWidth + 5;
-    const metaColWidth = (colWidth - 10) / 3;
-
+    // Invoice meta info (aligned with last 3 table columns)
     drawBox(metaStartX, currentY, metaColWidth, detailsRowHeight, '#e9ecef');
     doc.fontSize(10).font('Helvetica-Bold');
     doc.text('Invoice No.', metaStartX + 5, currentY + 8);
@@ -1339,7 +1371,7 @@ app.post("/generate", async (req, res) => {
     // Customer details and invoice values
     const customerDetailsHeight = 50;
     
-    drawBox(margin, currentY, colWidth - 5, customerDetailsHeight);
+    drawBox(margin, currentY, billToWidth, customerDetailsHeight);
 
     // Customer info
     doc.fontSize(10).font('Helvetica');
@@ -1351,7 +1383,7 @@ app.post("/generate", async (req, res) => {
       }
     });
 
-    // Invoice values
+    // Invoice values - properly aligned
     drawBox(metaStartX, currentY, metaColWidth, customerDetailsHeight);
     doc.fontSize(10).font('Helvetica');
     doc.text(invoice, metaStartX + 5, currentY + 20);
@@ -1369,8 +1401,8 @@ app.post("/generate", async (req, res) => {
     const baseRowHeight = 25;
     const headerRowHeight = 30;
 
-    // Table column definitions - properly sized to fit within page margins
-    const tableColumns = [
+    // Use the same table column definitions for consistency
+    const itemTableColumns = [
       { header: 'S.No', width: 40, align: 'center' },
       { header: 'Item Description', width: 200, align: 'left' },
       { header: 'Qty', width: 50, align: 'center' },
@@ -1382,7 +1414,7 @@ app.post("/generate", async (req, res) => {
     let tableX = margin;
 
     // Table headers
-    tableColumns.forEach(col => {
+    itemTableColumns.forEach(col => {
       drawBox(tableX, currentY, col.width, headerRowHeight, '#e9ecef');
       
       doc.fontSize(10).font('Helvetica-Bold');
@@ -1400,7 +1432,7 @@ app.post("/generate", async (req, res) => {
       
       // Calculate required height for the item description
       doc.fontSize(9).font('Helvetica');
-      const descriptionWidth = tableColumns[1].width - 10; // Item description column width minus padding
+      const descriptionWidth = itemTableColumns[1].width - 10; // Item description column width minus padding
       const wrappedLines = wrapText(doc, item.name, descriptionWidth);
       const requiredHeight = Math.max(baseRowHeight, wrappedLines.length * 12 + 10);
       
@@ -1413,7 +1445,7 @@ app.post("/generate", async (req, res) => {
         parseFloat(item.amount).toFixed(2)
       ];
 
-      tableColumns.forEach((col, colIndex) => {
+      itemTableColumns.forEach((col, colIndex) => {
         drawBox(tableX, currentY, col.width, requiredHeight);
         
         doc.fontSize(9).font('Helvetica');
@@ -1448,7 +1480,7 @@ app.post("/generate", async (req, res) => {
     
     for (let i = 0; i < emptyRowsNeeded; i++) {
       tableX = margin;
-      tableColumns.forEach(col => {
+      itemTableColumns.forEach(col => {
         drawBox(tableX, currentY, col.width, baseRowHeight);
         tableX += col.width;
       });
@@ -1460,7 +1492,7 @@ app.post("/generate", async (req, res) => {
     
     // Total row - properly aligned with table columns
     tableX = margin;
-    const totalLabelWidth = tableColumns.slice(0, 4).reduce((sum, col) => sum + col.width, 0);
+    const totalLabelWidth = itemTableColumns.slice(0, 4).reduce((sum, col) => sum + col.width, 0);
     
     drawBox(tableX, currentY, totalLabelWidth, totalRowHeight, '#f0f0f0');
     doc.fontSize(12).font('Helvetica-Bold');
@@ -1469,16 +1501,16 @@ app.post("/generate", async (req, res) => {
     tableX += totalLabelWidth;
 
     // Rate column with dashes
-    drawBox(tableX, currentY, tableColumns[4].width, totalRowHeight);
+    drawBox(tableX, currentY, itemTableColumns[4].width, totalRowHeight);
     doc.fontSize(11).font('Helvetica-Bold');
-    doc.text('---', tableX + 2, currentY + 8, { width: tableColumns[4].width - 4, align: 'center' });
+    doc.text('---', tableX + 2, currentY + 8, { width: itemTableColumns[4].width - 4, align: 'center' });
 
-    tableX += tableColumns[4].width;
+    tableX += itemTableColumns[4].width;
 
     // Amount column with total
-    drawBox(tableX, currentY, tableColumns[5].width, totalRowHeight, '#f8f9fa');
+    drawBox(tableX, currentY, itemTableColumns[5].width, totalRowHeight, '#f8f9fa');
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text(parseFloat(total).toFixed(2), tableX + 2, currentY + 8, { width: tableColumns[5].width - 4, align: 'center' });
+    doc.text(parseFloat(total).toFixed(2), tableX + 2, currentY + 8, { width: itemTableColumns[5].width - 4, align: 'center' });
 
     currentY += totalRowHeight + 20;
 
