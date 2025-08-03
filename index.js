@@ -632,7 +632,9 @@ app.get("/", (req, res) => {
         let formModified = false;
         let itemCounter = 0;
         
-        // Enhanced reload prevention - multiple safety checks
+        // Enhanced reload prevention - multiple safety checks INCLUDING MOBILE
+        
+        // 1. Standard beforeunload event (works on desktop and some mobile browsers)
         window.addEventListener('beforeunload', function (e) {
           if (formModified) {
             e.preventDefault();
@@ -641,7 +643,7 @@ app.get("/", (req, res) => {
           }
         });
 
-        // Additional protection for accidental page refresh
+        // 2. Additional protection for accidental page refresh (desktop)
         document.addEventListener('keydown', function(e) {
           // Prevent F5 and Ctrl+R if form is modified
           if (formModified && ((e.key === 'F5') || (e.ctrlKey && e.key === 'r'))) {
@@ -652,14 +654,170 @@ app.get("/", (req, res) => {
           }
         });
 
-        // Prevent accidental back button if form is modified
-        window.addEventListener('popstate', function(e) {
+        // 3. Mobile-specific reload protection using Page Visibility API
+        let isPageHidden = false;
+        document.addEventListener('visibilitychange', function() {
           if (formModified) {
-            if (!confirm('You have unsaved changes. Are you sure you want to go back?')) {
-              window.history.pushState(null, null, window.location.href);
+            if (document.hidden) {
+              isPageHidden = true;
+              // Store current state in sessionStorage for mobile recovery
+              try {
+                sessionStorage.setItem('invoiceFormBackup', JSON.stringify({
+                  billto: document.querySelector('input[name="billto"]').value,
+                  invoice: document.querySelector('input[name="invoice"]').value,
+                  date: document.querySelector('input[name="date"]').value,
+                  duedate: document.querySelector('input[name="duedate"]').value,
+                  isEditing: document.getElementById('isEditing').value,
+                  originalInvoiceNo: document.getElementById('originalInvoiceNo').value,
+                  timestamp: Date.now()
+                }));
+              } catch(e) {
+                console.log('Could not backup form data');
+              }
+            } else if (isPageHidden) {
+              isPageHidden = false;
+              // Page became visible again - check if user wants to restore
+              setTimeout(() => {
+                if (formModified && confirm('You have unsaved changes that may have been lost. Would you like to continue working on your invoice?')) {
+                  // User wants to continue - keep the current state
+                  return;
+                }
+              }, 500);
             }
           }
         });
+
+        // 4. Mobile pull-to-refresh prevention
+        let startY = 0;
+        let preventPullToRefresh = false;
+
+        document.addEventListener('touchstart', function(e) {
+          if (formModified) {
+            startY = e.touches[0].clientY;
+            preventPullToRefresh = (window.pageYOffset === 0);
+          }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+          if (formModified && preventPullToRefresh) {
+            const currentY = e.touches[0].clientY;
+            if (currentY > startY) {
+              // User is pulling down
+              e.preventDefault();
+              if (confirm('You have unsaved changes. Are you sure you want to refresh?')) {
+                window.location.reload();
+              }
+            }
+          }
+        }, { passive: false });
+
+        // 5. iOS Safari specific back/forward protection
+        window.addEventListener('pagehide', function(e) {
+          if (formModified && e.persisted) {
+            // Page is being cached, store backup
+            try {
+              sessionStorage.setItem('invoiceFormBackup', JSON.stringify({
+                billto: document.querySelector('input[name="billto"]').value,
+                invoice: document.querySelector('input[name="invoice"]').value,
+                date: document.querySelector('input[name="date"]').value,
+                duedate: document.querySelector('input[name="duedate"]').value,
+                isEditing: document.getElementById('isEditing').value,
+                originalInvoiceNo: document.getElementById('originalInvoiceNo').value,
+                timestamp: Date.now()
+              }));
+            } catch(e) {
+              console.log('Could not backup form data');
+            }
+          }
+        });
+
+        // 6. Page show event for restoring data after back/forward navigation
+        window.addEventListener('pageshow', function(e) {
+          if (e.persisted) {
+            // Page restored from cache
+            try {
+              const backup = sessionStorage.getItem('invoiceFormBackup');
+              if (backup) {
+                const data = JSON.parse(backup);
+                const timeDiff = Date.now() - data.timestamp;
+                
+                // If backup is less than 10 minutes old, offer to restore
+                if (timeDiff < 600000 && confirm('Your previous invoice data was found. Would you like to restore it?')) {
+                  document.querySelector('input[name="billto"]').value = data.billto || '';
+                  document.querySelector('input[name="invoice"]').value = data.invoice || '';
+                  document.querySelector('input[name="date"]').value = data.date || '';
+                  document.querySelector('input[name="duedate"]').value = data.duedate || '';
+                  document.getElementById('isEditing').value = data.isEditing || 'false';
+                  document.getElementById('originalInvoiceNo').value = data.originalInvoiceNo || '';
+                  
+                  if (data.isEditing === 'true' && data.originalInvoiceNo) {
+                    setEditingMode(data.originalInvoiceNo);
+                  }
+                  
+                  markFormModified();
+                  showMessage('Previous invoice data restored!', 'success');
+                }
+                // Clear the backup after offering to restore
+                sessionStorage.removeItem('invoiceFormBackup');
+              }
+            } catch(e) {
+              console.log('Could not restore form data');
+            }
+          }
+        });
+
+        // 7. Android Chrome specific handling
+        let androidBackPressCount = 0;
+        document.addEventListener('keydown', function(e) {
+          if (formModified && e.keyCode === 4) { // Android back button
+            e.preventDefault();
+            androidBackPressCount++;
+            
+            if (androidBackPressCount === 1) {
+              setTimeout(() => {
+                androidBackPressCount = 0;
+              }, 2000);
+              
+              if (confirm('You have unsaved changes. Are you sure you want to go back?')) {
+                formModified = false;
+                window.history.back();
+              }
+            }
+          }
+        });
+
+        // 8. Prevent accidental back button if form is modified (Enhanced for mobile)
+        let navigationAttempts = 0;
+        window.addEventListener('popstate', function(e) {
+          if (formModified) {
+            navigationAttempts++;
+            
+            // For mobile, be more aggressive about preventing navigation
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+              window.history.pushState(null, null, window.location.href);
+              
+              if (navigationAttempts <= 2) {
+                setTimeout(() => {
+                  if (confirm('You have unsaved invoice changes. Are you sure you want to leave this page?')) {
+                    formModified = false;
+                    window.history.back();
+                  }
+                }, 100);
+              }
+            } else {
+              if (!confirm('You have unsaved changes. Are you sure you want to go back?')) {
+                window.history.pushState(null, null, window.location.href);
+              }
+            }
+          }
+        });
+
+        // Reset navigation attempts after some time
+        setInterval(() => {
+          navigationAttempts = 0;
+        }, 5000);
 
         // Push initial state for back button protection
         window.history.pushState(null, null, window.location.href);
@@ -775,6 +933,13 @@ app.get("/", (req, res) => {
           addItem();
           formModified = false;
           updateTotals();
+          
+          // Clear any stored backup data
+          try {
+            sessionStorage.removeItem('invoiceFormBackup');
+          } catch(e) {
+            console.log('Could not clear backup data');
+          }
         }
 
         function addItem() {
@@ -1097,6 +1262,13 @@ app.get("/", (req, res) => {
               
               setTimeout(() => window.URL.revokeObjectURL(url), 100);
               formModified = false;
+              
+              // Clear backup data after successful save
+              try {
+                sessionStorage.removeItem('invoiceFormBackup');
+              } catch(e) {
+                console.log('Could not clear backup data');
+              }
               
               if (isEditing) {
                 showMessage('✅ Invoice ' + data.invoice + ' updated and downloaded successfully!', 'success');
