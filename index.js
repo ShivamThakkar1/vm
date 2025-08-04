@@ -777,6 +777,101 @@ app.get("/", (req, res) => {
           updateTotals();
         }
 
+        // FIXED: Enhanced calculateDiscount function with better validation
+        function calculateDiscount(amount, discount) {
+          if (!discount || discount.toString().trim() === '' || discount.toString().trim() === '0') return 0;
+          
+          discount = discount.toString().trim();
+          if (discount.endsWith('%')) {
+            const percent = parseFloat(discount.slice(0, -1));
+            if (isNaN(percent)) return 0;
+            return (amount * percent) / 100;
+          } else {
+            const flatDiscount = parseFloat(discount);
+            return isNaN(flatDiscount) ? 0 : flatDiscount;
+          }
+        }
+
+        // FIXED: Improved syncInputs function with proper element identification
+        function syncInputs(sourceElement) {
+          const desktopRows = document.querySelectorAll("#itemsTableBody tr");
+          const mobileCards = document.querySelectorAll(".item-card");
+          
+          // Find which row/card contains the source element
+          let sourceIndex = -1;
+          let isFromDesktop = false;
+          
+          // Check if source is from desktop table
+          desktopRows.forEach((row, index) => {
+            if (row.contains(sourceElement)) {
+              sourceIndex = index;
+              isFromDesktop = true;
+            }
+          });
+          
+          // Check if source is from mobile card
+          if (sourceIndex === -1) {
+            mobileCards.forEach((card, index) => {
+              if (card.contains(sourceElement)) {
+                sourceIndex = index;
+                isFromDesktop = false;
+              }
+            });
+          }
+          
+          if (sourceIndex !== -1) {
+            const desktopInputs = desktopRows[sourceIndex].querySelectorAll("input, select");
+            const mobileInputs = mobileCards[sourceIndex].querySelectorAll("input, select");
+            
+            if (isFromDesktop) {
+              // Sync from desktop to mobile
+              for (let i = 0; i < desktopInputs.length && i < mobileInputs.length; i++) {
+                mobileInputs[i].value = desktopInputs[i].value;
+              }
+            } else {
+              // Sync from mobile to desktop
+              for (let i = 0; i < mobileInputs.length && i < desktopInputs.length; i++) {
+                desktopInputs[i].value = mobileInputs[i].value;
+              }
+            }
+          }
+        }
+
+        // FIXED: Enhanced updateTotals function with proper sync handling
+        function updateTotals() {
+          let total = 0;
+          
+          // Update desktop table amounts and sync with mobile
+          document.querySelectorAll("#itemsTableBody tr").forEach((row, index) => {
+            const inputs = row.querySelectorAll("input, select");
+            const qty = parseFloat(inputs[1].value) || 0;
+            const rate = parseFloat(inputs[3].value) || 0;
+            const discount = inputs[4].value || '0';
+            
+            const grossAmount = qty * rate;
+            const discountAmount = calculateDiscount(grossAmount, discount);
+            const netAmount = grossAmount - discountAmount;
+            
+            // Update desktop amount display
+            const amountDisplay = row.querySelector('.amount-display');
+            amountDisplay.textContent = netAmount.toFixed(2);
+            
+            // Update corresponding mobile card amount
+            const mobileCards = document.querySelectorAll('.item-card');
+            if (mobileCards[index]) {
+              const mobileAmountDisplay = mobileCards[index].querySelector('.mobile-amount-display');
+              if (mobileAmountDisplay) {
+                mobileAmountDisplay.textContent = 'Amount: ₹' + netAmount.toFixed(2);
+              }
+            }
+            
+            total += netAmount;
+          });
+          
+          document.getElementById("total").textContent = total.toFixed(2);
+        }
+
+        // FIXED: Enhanced addItem function with default discount "0" and proper event listeners
         function addItem() {
           itemCounter++;
           
@@ -804,7 +899,7 @@ app.get("/", (req, res) => {
               '</select>' +
             '</td>' +
             '<td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>' +
-            '<td><input name="discount" type="text" placeholder="0 or 10%" /></td>' +
+            '<td><input name="discount" type="text" placeholder="0" value="0" /></td>' +
             '<td><div class="amount-display">0.00</div></td>' +
             '<td style="text-align: center;">' +
               '<button type="button" class="remove-btn" onclick="removeItem(this)">🗑️ Remove</button>' +
@@ -857,50 +952,32 @@ app.get("/", (req, res) => {
             
             '<div class="item-field">' +
               '<label>Discount:</label>' +
-              '<input name="discount" type="text" placeholder="0 or 10%" />' +
+              '<input name="discount" type="text" placeholder="0" value="0" />' +
             '</div>' +
             
             '<div class="mobile-amount-display">Amount: ₹0.00</div>';
           
           mobileContainer.appendChild(card);
           
-          // Add event listeners to both desktop and mobile inputs
+          // FIXED: Add event listeners with proper sync handling
           row.querySelectorAll("input, select").forEach(input => {
-            input.addEventListener("input", updateTotals);
-            input.addEventListener("input", markFormModified);
-            input.addEventListener("input", syncInputs);
+            input.addEventListener("input", function() {
+              syncInputs(this);
+              updateTotals();
+              markFormModified();
+            });
           });
           
           card.querySelectorAll("input, select").forEach(input => {
-            input.addEventListener("input", updateTotals);
-            input.addEventListener("input", markFormModified);
-            input.addEventListener("input", syncInputs);
+            input.addEventListener("input", function() {
+              syncInputs(this);
+              updateTotals();
+              markFormModified();
+            });
           });
           
           updateTotals();
           markFormModified();
-        }
-
-        function syncInputs() {
-          // Sync values between desktop table and mobile cards
-          const desktopRows = document.querySelectorAll("#itemsTableBody tr");
-          const mobileCards = document.querySelectorAll(".item-card");
-          
-          desktopRows.forEach((row, index) => {
-            const card = mobileCards[index];
-            if (card) {
-              const rowInputs = row.querySelectorAll("input, select");
-              const cardInputs = card.querySelectorAll("input, select");
-              
-              for (let i = 0; i < rowInputs.length && i < cardInputs.length; i++) {
-                if (event.target === rowInputs[i]) {
-                  cardInputs[i].value = rowInputs[i].value;
-                } else if (event.target === cardInputs[i]) {
-                  rowInputs[i].value = cardInputs[i].value;
-                }
-              }
-            }
-          });
         }
 
         function removeItem(btn) {
@@ -968,18 +1045,6 @@ app.get("/", (req, res) => {
           itemCounter = rows.length;
         }
 
-        function calculateDiscount(amount, discount) {
-          if (!discount || discount.trim() === '') return 0;
-          
-          discount = discount.trim();
-          if (discount.endsWith('%')) {
-            const percent = parseFloat(discount.slice(0, -1));
-            return (amount * percent) / 100;
-          } else {
-            return parseFloat(discount) || 0;
-          }
-        }
-
         function formatDiscountForPDF(discount) {
           if (!discount || discount.trim() === '' || discount === '0') return '0';
           
@@ -989,38 +1054,6 @@ app.get("/", (req, res) => {
           } else {
             return discount;
           }
-        }
-
-        function updateTotals() {
-          let total = 0;
-          
-          // Update desktop table amounts
-          document.querySelectorAll("#itemsTableBody tr").forEach((row, index) => {
-            const inputs = row.querySelectorAll("input, select");
-            const qty = parseFloat(inputs[1].value) || 0;
-            const rate = parseFloat(inputs[3].value) || 0;
-            const discount = inputs[4].value || '0';
-            
-            const grossAmount = qty * rate;
-            const discountAmount = calculateDiscount(grossAmount, discount);
-            const netAmount = grossAmount - discountAmount;
-            
-            const amountDisplay = row.querySelector('.amount-display');
-            amountDisplay.textContent = netAmount.toFixed(2);
-            
-            // Update corresponding mobile card amount
-            const mobileCards = document.querySelectorAll('.item-card');
-            if (mobileCards[index]) {
-              const mobileAmountDisplay = mobileCards[index].querySelector('.mobile-amount-display');
-              if (mobileAmountDisplay) {
-                mobileAmountDisplay.textContent = 'Amount: ₹' + netAmount.toFixed(2);
-              }
-            }
-            
-            total += netAmount;
-          });
-          
-          document.getElementById("total").textContent = total.toFixed(2);
         }
 
         document.querySelectorAll('input, select').forEach(input => {
@@ -1328,7 +1361,7 @@ app.post("/generate", async (req, res) => {
     });
     
     businessY += 20;
-    doc.text(`Mobile: ${BILL_PHONE}`, margin + 10, businessY, {
+    doc.text(\`Mobile: \${BILL_PHONE}\`, margin + 10, businessY, {
       width: contentWidth - 20,
       align: 'center'
     });
@@ -1375,7 +1408,7 @@ app.post("/generate", async (req, res) => {
 
     // Customer info
     doc.fontSize(10).font('Helvetica');
-    const billToLines = billto.split('\n');
+    const billToLines = billto.split('\\n');
     let customerY = currentY + 8;
     billToLines.forEach((line, index) => {
       if (index < 3) { // Limit to 3 lines
@@ -1540,7 +1573,7 @@ app.post("/generate", async (req, res) => {
 
     doc.fontSize(9).font('Helvetica');
     doc.text('1. Goods once sold will not be taken back or exchanged', margin + 10, currentY + 8);
-    doc.text(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 10, currentY + 22);
+    doc.text(\`2. All disputes are subject to \${BILL_CITY} jurisdiction only\`, margin + 10, currentY + 22);
     doc.text('3. Payment terms: As per agreement', margin + 10, currentY + 36);
 
     // Finalize PDF
@@ -1597,3 +1630,4 @@ app.delete("/api/invoice/:invoiceNo", async (req, res) => {
 });
 
 app.listen(PORT, () => console.log("✅ Professional Invoice Generator running on port", PORT));
+    
