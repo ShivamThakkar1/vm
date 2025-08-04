@@ -727,12 +727,18 @@ app.get("/", (req, res) => {
           
           invoice.items.forEach(item => {
             addItem();
-            const lastDesktopRow = document.getElementById('itemsTableBody').lastElementChild;
-            const lastMobileCard = document.getElementById('mobileItemsContainer').lastElementChild;
+            const currentIndex = itemCounter - 1;
+            
+            // Get the current desktop row and mobile card
+            const desktopRows = document.querySelectorAll('#itemsTableBody tr');
+            const mobileCards = document.querySelectorAll('.item-card');
+            
+            const currentDesktopRow = desktopRows[currentIndex];
+            const currentMobileCard = mobileCards[currentIndex];
             
             // Populate desktop table
-            if (lastDesktopRow) {
-              const inputs = lastDesktopRow.querySelectorAll('input, select');
+            if (currentDesktopRow) {
+              const inputs = currentDesktopRow.querySelectorAll('input, select');
               inputs[0].value = item.name;
               inputs[1].value = item.qty;
               inputs[2].value = item.unit;
@@ -741,8 +747,8 @@ app.get("/", (req, res) => {
             }
             
             // Populate mobile card
-            if (lastMobileCard) {
-              const mobileInputs = lastMobileCard.querySelectorAll('input, select');
+            if (currentMobileCard) {
+              const mobileInputs = currentMobileCard.querySelectorAll('input, select');
               mobileInputs[0].value = item.name;
               mobileInputs[1].value = item.qty;
               mobileInputs[2].value = item.unit;
@@ -777,107 +783,13 @@ app.get("/", (req, res) => {
           updateTotals();
         }
 
-        // FIXED: Enhanced calculateDiscount function with better validation
-        function calculateDiscount(amount, discount) {
-          if (!discount || discount.toString().trim() === '' || discount.toString().trim() === '0') return 0;
-          
-          discount = discount.toString().trim();
-          if (discount.endsWith('%')) {
-            const percent = parseFloat(discount.slice(0, -1));
-            if (isNaN(percent)) return 0;
-            return (amount * percent) / 100;
-          } else {
-            const flatDiscount = parseFloat(discount);
-            return isNaN(flatDiscount) ? 0 : flatDiscount;
-          }
-        }
-
-        // FIXED: Improved syncInputs function with proper element identification
-        function syncInputs(sourceElement) {
-          const desktopRows = document.querySelectorAll("#itemsTableBody tr");
-          const mobileCards = document.querySelectorAll(".item-card");
-          
-          // Find which row/card contains the source element
-          let sourceIndex = -1;
-          let isFromDesktop = false;
-          
-          // Check if source is from desktop table
-          desktopRows.forEach((row, index) => {
-            if (row.contains(sourceElement)) {
-              sourceIndex = index;
-              isFromDesktop = true;
-            }
-          });
-          
-          // Check if source is from mobile card
-          if (sourceIndex === -1) {
-            mobileCards.forEach((card, index) => {
-              if (card.contains(sourceElement)) {
-                sourceIndex = index;
-                isFromDesktop = false;
-              }
-            });
-          }
-          
-          if (sourceIndex !== -1) {
-            const desktopInputs = desktopRows[sourceIndex].querySelectorAll("input, select");
-            const mobileInputs = mobileCards[sourceIndex].querySelectorAll("input, select");
-            
-            if (isFromDesktop) {
-              // Sync from desktop to mobile
-              for (let i = 0; i < desktopInputs.length && i < mobileInputs.length; i++) {
-                mobileInputs[i].value = desktopInputs[i].value;
-              }
-            } else {
-              // Sync from mobile to desktop
-              for (let i = 0; i < mobileInputs.length && i < desktopInputs.length; i++) {
-                desktopInputs[i].value = mobileInputs[i].value;
-              }
-            }
-          }
-        }
-
-        // FIXED: Enhanced updateTotals function with proper sync handling
-        function updateTotals() {
-          let total = 0;
-          
-          // Update desktop table amounts and sync with mobile
-          document.querySelectorAll("#itemsTableBody tr").forEach((row, index) => {
-            const inputs = row.querySelectorAll("input, select");
-            const qty = parseFloat(inputs[1].value) || 0;
-            const rate = parseFloat(inputs[3].value) || 0;
-            const discount = inputs[4].value || '0';
-            
-            const grossAmount = qty * rate;
-            const discountAmount = calculateDiscount(grossAmount, discount);
-            const netAmount = grossAmount - discountAmount;
-            
-            // Update desktop amount display
-            const amountDisplay = row.querySelector('.amount-display');
-            amountDisplay.textContent = netAmount.toFixed(2);
-            
-            // Update corresponding mobile card amount
-            const mobileCards = document.querySelectorAll('.item-card');
-            if (mobileCards[index]) {
-              const mobileAmountDisplay = mobileCards[index].querySelector('.mobile-amount-display');
-              if (mobileAmountDisplay) {
-                mobileAmountDisplay.textContent = 'Amount: ₹' + netAmount.toFixed(2);
-              }
-            }
-            
-            total += netAmount;
-          });
-          
-          document.getElementById("total").textContent = total.toFixed(2);
-        }
-
-        // FIXED: Enhanced addItem function with default discount "0" and proper event listeners
         function addItem() {
           itemCounter++;
           
           // Add to desktop table
           const tableBody = document.getElementById('itemsTableBody');
           const row = document.createElement('tr');
+          row.dataset.itemIndex = itemCounter - 1;
           
           row.innerHTML = 
             '<td style="text-align: center; font-weight: bold; background: #f8f9fa;">' + itemCounter + '</td>' +
@@ -899,7 +811,7 @@ app.get("/", (req, res) => {
               '</select>' +
             '</td>' +
             '<td><input name="rate" type="number" step="0.01" placeholder="0.00" required /></td>' +
-            '<td><input name="discount" type="text" placeholder="0" value="0" /></td>' +
+            '<td><input name="discount" type="text" placeholder="0 or 10%" /></td>' +
             '<td><div class="amount-display">0.00</div></td>' +
             '<td style="text-align: center;">' +
               '<button type="button" class="remove-btn" onclick="removeItem(this)">🗑️ Remove</button>' +
@@ -911,6 +823,7 @@ app.get("/", (req, res) => {
           const mobileContainer = document.getElementById('mobileItemsContainer');
           const card = document.createElement('div');
           card.className = 'item-card';
+          card.dataset.itemIndex = itemCounter - 1;
           
           card.innerHTML = 
             '<div class="item-card-header">' +
@@ -952,32 +865,52 @@ app.get("/", (req, res) => {
             
             '<div class="item-field">' +
               '<label>Discount:</label>' +
-              '<input name="discount" type="text" placeholder="0" value="0" />' +
+              '<input name="discount" type="text" placeholder="0 or 10%" />' +
             '</div>' +
             
             '<div class="mobile-amount-display">Amount: ₹0.00</div>';
           
           mobileContainer.appendChild(card);
           
-          // FIXED: Add event listeners with proper sync handling
-          row.querySelectorAll("input, select").forEach(input => {
-            input.addEventListener("input", function() {
-              syncInputs(this);
-              updateTotals();
+          // Add event listeners to desktop inputs with proper synchronization
+          const desktopInputs = row.querySelectorAll("input, select");
+          desktopInputs.forEach((input, inputIndex) => {
+            input.addEventListener("input", function(e) {
               markFormModified();
+              syncInputValues(itemCounter - 1, inputIndex, e.target.value, 'desktop');
+              updateTotals();
             });
           });
           
-          card.querySelectorAll("input, select").forEach(input => {
-            input.addEventListener("input", function() {
-              syncInputs(this);
-              updateTotals();
+          // Add event listeners to mobile inputs with proper synchronization
+          const mobileInputs = card.querySelectorAll("input, select");
+          mobileInputs.forEach((input, inputIndex) => {
+            input.addEventListener("input", function(e) {
               markFormModified();
+              syncInputValues(itemCounter - 1, inputIndex, e.target.value, 'mobile');
+              updateTotals();
             });
           });
           
           updateTotals();
           markFormModified();
+        }
+
+        // Fixed synchronization function
+        function syncInputValues(itemIndex, inputIndex, value, source) {
+          const desktopRows = document.querySelectorAll("#itemsTableBody tr");
+          const mobileCards = document.querySelectorAll(".item-card");
+          
+          if (desktopRows[itemIndex] && mobileCards[itemIndex]) {
+            const desktopInputs = desktopRows[itemIndex].querySelectorAll("input, select");
+            const mobileInputs = mobileCards[itemIndex].querySelectorAll("input, select");
+            
+            if (source === 'desktop' && mobileInputs[inputIndex]) {
+              mobileInputs[inputIndex].value = value;
+            } else if (source === 'mobile' && desktopInputs[inputIndex]) {
+              desktopInputs[inputIndex].value = value;
+            }
+          }
         }
 
         function removeItem(btn) {
@@ -1031,6 +964,7 @@ app.get("/", (req, res) => {
           const rows = document.querySelectorAll('#itemsTableBody tr');
           rows.forEach((row, index) => {
             row.cells[0].textContent = index + 1;
+            row.dataset.itemIndex = index;
           });
           
           // Renumber mobile cards
@@ -1040,9 +974,22 @@ app.get("/", (req, res) => {
             if (numberElement) {
               numberElement.textContent = index + 1;
             }
+            card.dataset.itemIndex = index;
           });
           
           itemCounter = rows.length;
+        }
+
+        function calculateDiscount(amount, discount) {
+          if (!discount || discount.trim() === '') return 0;
+          
+          discount = discount.trim();
+          if (discount.endsWith('%')) {
+            const percent = parseFloat(discount.slice(0, -1));
+            return (amount * percent) / 100;
+          } else {
+            return parseFloat(discount) || 0;
+          }
         }
 
         function formatDiscountForPDF(discount) {
@@ -1056,7 +1003,41 @@ app.get("/", (req, res) => {
           }
         }
 
-        document.querySelectorAll('input, select').forEach(input => {
+        function updateTotals() {
+          let total = 0;
+          
+          // Update desktop table amounts and sync with mobile
+          document.querySelectorAll("#itemsTableBody tr").forEach((row, index) => {
+            const inputs = row.querySelectorAll("input, select");
+            const qty = parseFloat(inputs[1].value) || 0;
+            const rate = parseFloat(inputs[3].value) || 0;
+            const discount = inputs[4].value || '0';
+            
+            const grossAmount = qty * rate;
+            const discountAmount = calculateDiscount(grossAmount, discount);
+            const netAmount = grossAmount - discountAmount;
+            
+            // Update desktop amount display
+            const amountDisplay = row.querySelector('.amount-display');
+            amountDisplay.textContent = netAmount.toFixed(2);
+            
+            // Update corresponding mobile card amount
+            const mobileCards = document.querySelectorAll('.item-card');
+            if (mobileCards[index]) {
+              const mobileAmountDisplay = mobileCards[index].querySelector('.mobile-amount-display');
+              if (mobileAmountDisplay) {
+                mobileAmountDisplay.textContent = 'Amount: ₹' + netAmount.toFixed(2);
+              }
+            }
+            
+            total += netAmount;
+          });
+          
+          document.getElementById("total").textContent = total.toFixed(2);
+        }
+
+        // Add event listeners to form inputs
+        document.querySelectorAll('input:not([name="name"]):not([name="qty"]):not([name="unit"]):not([name="rate"]):not([name="discount"]), select:not([name="unit"])').forEach(input => {
           input.addEventListener('input', markFormModified);
         });
 
@@ -1361,7 +1342,7 @@ app.post("/generate", async (req, res) => {
     });
     
     businessY += 20;
-    doc.text(\`Mobile: \${BILL_PHONE}\`, margin + 10, businessY, {
+    doc.text(`Mobile: ${BILL_PHONE}`, margin + 10, businessY, {
       width: contentWidth - 20,
       align: 'center'
     });
@@ -1408,7 +1389,7 @@ app.post("/generate", async (req, res) => {
 
     // Customer info
     doc.fontSize(10).font('Helvetica');
-    const billToLines = billto.split('\\n');
+    const billToLines = billto.split('\n');
     let customerY = currentY + 8;
     billToLines.forEach((line, index) => {
       if (index < 3) { // Limit to 3 lines
@@ -1573,7 +1554,7 @@ app.post("/generate", async (req, res) => {
 
     doc.fontSize(9).font('Helvetica');
     doc.text('1. Goods once sold will not be taken back or exchanged', margin + 10, currentY + 8);
-    doc.text(\`2. All disputes are subject to \${BILL_CITY} jurisdiction only\`, margin + 10, currentY + 22);
+    doc.text(`2. All disputes are subject to ${BILL_CITY} jurisdiction only`, margin + 10, currentY + 22);
     doc.text('3. Payment terms: As per agreement', margin + 10, currentY + 36);
 
     // Finalize PDF
@@ -1630,4 +1611,3 @@ app.delete("/api/invoice/:invoiceNo", async (req, res) => {
 });
 
 app.listen(PORT, () => console.log("✅ Professional Invoice Generator running on port", PORT));
-    
